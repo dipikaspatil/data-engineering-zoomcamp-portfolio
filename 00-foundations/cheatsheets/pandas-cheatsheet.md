@@ -310,4 +310,6 @@ To get 1000 elements using loc, you will need to go one lower and ask for df.loc
 reviews.set_index("title")
 ```
 
-![Dataframe set index][images/dataframe_set_index.png]
+![Dataframe set index](../images/dataframe_set_index.png)
+
+
