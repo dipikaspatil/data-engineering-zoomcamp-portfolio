@@ -714,3 +714,155 @@ Length: 129971, dtype: object
 * These operators are faster than map() or apply() because they use speed ups built into pandas. All of the standard Python operators (>, <, ==, and so on) work in this manner.
 
 * However, they are not as flexible as map() or apply(), which can do more advanced things, like applying conditional logic, which cannot be done with addition and subtraction alone.
+
+#### Imp exercise
+
+* I'm an economical wine buyer. Which wine is the "best bargain"? Create a variable bargain_wine with the title of the wine with the highest points-to-price ratio in the dataset. (Q5 from https://www.kaggle.com/code/dipikasureshpatil/exercise-summary-functions-and-maps/edit)
+
+```python
+bargain_index = (reviews.points / reviews.price).idxmax()
+bargain_wine = reviews.loc[bargain_index, 'title']
+'''
+🧠 Explanation
+
+- reviews.points / reviews.price computes the points‑to‑price ratio for each wine. 
+
+- .idxmax() finds the index label where this ratio is largest. 
+criskrus.github.io
+
+- reviews.loc[...] retrieves the title at that index. 
+criskrus.github.io
+
+So bargain_wine ends up as a string — the name of the most cost‑effective wine in the dataset.
+'''
+```
+
+* There are only so many words you can use when describing a bottle of wine. Is a wine more likely to be "tropical" or "fruity"? Create a Series descriptor_counts counting how many times each of these two words appears in the description column in the dataset. (For simplicity, let's ignore the capitalized versions of these words.) (Q6 from https://www.kaggle.com/code/dipikasureshpatil/exercise-summary-functions-and-maps/edit)
+
+```python
+n_tropical = reviews.description.map(lambda d : "tropical" in d).sum()
+n_fruity = reviews.description.map(lambda d : "fruity" in d).sum()
+
+descriptor_counts = pd.Series([n_tropical, n_fruity], index=["tropical","fruity"])
+
+print(descriptor_counts)
+
+'''
+tropical    3607
+fruity      9090
+dtype: int64
+'''
+```
+
+```python
+n_tropical = reviews.description.str.contains("tropical").sum()
+n_fruity   = reviews.description.str.contains("fruity").sum()
+
+descriptor_counts = pd.Series([n_tropical, n_fruity], index=["tropical","fruity"])
+
+print(descriptor_counts)
+
+'''
+Note - 
+.contains() exists only on string Series (like reviews.description.str.contains("tropical"))
+
+tropical    3607
+fruity      9090
+dtype: int64
+'''
+```
+
+* We'd like to host these wine reviews on our website, but a rating system ranging from 80 to 100 points is too hard to understand - we'd like to translate them into simple star ratings. A score of 95 or higher counts as 3 stars, a score of at least 85 but less than 95 is 2 stars. Any other score is 1 star.
+Also, the Canadian Vintners Association bought a lot of ads on the site, so any wines from Canada should automatically get 3 stars, regardless of points.
+Create a series star_ratings with the number of stars corresponding to each review in the dataset.
+
+```python
+def set_ratings(row):
+    if (row.country == "Canada") or (row.points >= 95):
+        return 3
+    elif (row.points >= 85) and (row.points < 95):
+        return 2
+    else:
+        return 1
+
+star_ratings = reviews.apply(set_ratings, axis = 1)
+
+'''
+0         2
+1         2
+         ..
+129969    2
+129970    2
+Length: 129971, dtype: int64
+'''
+```
+
+## 4 - Grouping and Sorting
+
+### Groupwise analysis
+* One function we've been using heavily thus far is the value_counts() function. We can replicate what value_counts() does by doing the following:
+
+```python
+reviews.groupby('points').points.count()
+
+'''
+points
+80     397
+81     692
+      ... 
+99      33
+100     19
+Name: points, Length: 21, dtype: int64
+'''
+```
+
+* groupby() created a group of reviews which allotted the same point values to the given wines. Then, for each of these groups, we grabbed the points() column and counted how many times it appeared. value_counts() is just a shortcut to this groupby() operation.
+
+* We can use any of the summary functions we've used before with this data. For example, to get the cheapest wine in each point value category, we can do the following:
+
+```python
+reviews.groupby('points').price.min()
+
+'''
+points
+80      5.0
+81      5.0
+       ... 
+99     44.0
+100    80.0
+Name: price, Length: 21, dtype: float64
+'''
+```
+
+* You can think of each group we generate as being a slice of our DataFrame containing only data with values that match. This DataFrame is accessible to us directly using the apply() method, and we can then manipulate the data in any way we see fit.
+
+* For example, here's one way of selecting the name of the first wine reviewed from each winery in the dataset:
+
+```python
+reviews.groupby('winery').apply(lambda df: df.title.iloc[0])
+
+'''
+winery
+1+1=3                          1+1=3 NV Rosé Sparkling (Cava)
+10 Knots                 10 Knots 2010 Viognier (Paso Robles)
+                                  ...                        
+àMaurice    àMaurice 2013 Fred Estate Syrah (Walla Walla V...
+Štoka                         Štoka 2009 Izbrani Teran (Kras)
+Length: 16757, dtype: object
+'''
+```
+
+* For even more fine-grained control, you can also group by more than one column.
+
+* For an example, here's how we would pick out the best wine by country and province:
+
+```python
+reviews.groupby(['country', 'province']).apply(lambda df: df.loc[df.points.idxmax()])
+```
+![Group By Contry Province](../images/group_by_country_province.png)
+
+
+
+
+
+
