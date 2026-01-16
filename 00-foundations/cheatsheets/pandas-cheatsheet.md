@@ -859,10 +859,14 @@ Length: 16757, dtype: object
 ```python
 reviews.groupby(['country', 'province']).apply(lambda df: df.loc[df.points.idxmax()])
 ```
-![Group By Contry Province](../images/group_by_country_province.png)
+![GroupBy Contry Province](../images/group_by_country_province.png)
 
+* Another groupby() method worth mentioning is agg(), which lets you run a bunch of different functions on your DataFrame simultaneously. 
 
+* For example, we can generate a simple statistical summary of the dataset as follows:
 
+```python
+reviews.groupby(['country']).price.agg([len, min, max])
+```
 
-
-
+![GroupBy Contry Province](../images/group_by_agg.png)
