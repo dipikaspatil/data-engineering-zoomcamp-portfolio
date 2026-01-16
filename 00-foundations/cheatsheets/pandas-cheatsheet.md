@@ -277,7 +277,7 @@ reviews.iloc[:3, 0]
 reviews.iloc[1:3, 0]
 
 # It's also possible to pass a list
-reviews.iloc[[0, 1, 2], 0] # return 0,1,2 records
+reviews.iloc[[0, 1, 2], 0] # return 1st column of 0,1,2 records
 
 # Negative numbers can be used in selection. last five elements of the dataset
 reviews.iloc[-5:]
@@ -287,10 +287,10 @@ reviews.iloc[-5:]
 
 ```python
 # to get the first country in reviews
-reviews.loc[0, 'country']
+reviews.loc[0, 'country'] # this will return series
 
 # To get all entries of specific columns
-reviews.loc[:, ['taster_name', 'taster_twitter_handle', 'points']]
+reviews.loc[:, ['taster_name', 'taster_twitter_handle', 'points']] # this will return dataframe
 ```
 
 * Difference between iloc and loc - 
@@ -312,4 +312,405 @@ reviews.set_index("title")
 
 ![Dataframe set index](../images/dataframe_set_index.png)
 
+#### Conditional selection
 
+* checking if each wine is Italian or not:
+
+```python
+reviews.country == 'Italy'
+
+0         True
+1         False
+          ...  
+129969    False
+129970    False
+Name: country, Length: 129971, dtype: bool
+
+'''
+This operation produced a Series of True/False booleans based on the country of each record. This result can then be used inside of loc to select the relevant data:
+'''
+
+reviews.loc[reviews.country == 'Italy']
+```
+
+| Country | Description                                       | Designation  | Points |
+| ------- | ------------------------------------------------- | ------------ | ------ |
+| Italy   | Aromas include tropical fruit, broom, brimston... | Vulkà Bianco | 87     |
+| Italy   | Here's a bright, informal red that opens with ... | Belsito      | 87     |
+| ...     | ...                                               | ...          | ...    |
+| Italy   | Intense aromas of wild cherry, baking spice, t... | NaN          | 90     |
+
+
+* We also wanted to know which ones are better than average. Wines are reviewed on a 80-to-100 point scale, so this could mean wines that accrued at least 90 points.
+
+```python
+reviews.loc[(reviews.country == 'Italy') & (reviews.points >= 90)]
+```
+
+| Country | Description                                       | Designation               | Points |
+| ------- | ------------------------------------------------- | ------------------------- | ------ |
+| Italy   | Slightly backward, particularly given the vint... | Bricco Rocche Prapó       | 92     |
+| Italy   | At the first it was quite muted and subdued, b... | Bricco Rocche Brunate     | 91     |
+| ...     | ...                                               | ...                       | ...    |
+| Italy   | Intense aromas of wild cherry, baking spice, t... | NaN                       | 90     |
+| Italy   | Blackberry, cassis, grilled herb and toasted a... | Sàgana Tenuta San Giacomo | 90     |
+
+
+
+* Suppose we'll buy any wine that's made in Italy or which is rated above average. 
+
+```python
+reviews.loc[(reviews.country == 'Italy') | (reviews.points >= 90)]
+
+# Note - Every condition should be wrapped in () seperately
+```
+
+| Country | Description                                       | Designation  | Points |
+| ------- | ------------------------------------------------- | ------------ | ------ |
+| Italy   | Aromas include tropical fruit, broom, brimston... | Vulkà Bianco | 87     |
+| Italy   | Here's a bright, informal red that opens with ... | Belsito      | 87     |
+| ...     | ...                                               | ...          | ...    |
+| France  | A dry style of Pinot Gris, this is crisp with ... | NaN          | 90     |
+
+
+* isin is lets you select data whose value "is in" a list of values. For example, here's how we can use it to select wines only from Italy or France:
+
+```python
+reviews.loc[reviews.country.isin(['Italy', 'France'])]
+```
+
+| Country | Description                                       | Designation                   | Points |
+| ------- | ------------------------------------------------- | ----------------------------- | ------ |
+| Italy   | Aromas include tropical fruit, broom, brimston... | Vulkà Bianco                  | 87     |
+| Italy   | Here's a bright, informal red that opens with ... | Belsito                       | 87     |
+| ...     | ...                                               | ...                           | ...    |
+| France  | A dry style of Pinot Gris, this is crisp with ... | NaN                           | 90     |
+| France  | Big, rich and off-dry, this is powered by inte... | Lieu-dit Harth Cuvée Caroline | 90     |
+
+* isnull (and its companion notnull). These methods let you highlight values which are (or are not) empty (NaN). For example, to filter out wines lacking a price tag in the dataset, here's what we would do
+
+```python
+reviews.loc[reviews.price.notnull()]
+```
+
+| Country  | Description                                       | Designation | Points | Price |
+| -------- | ------------------------------------------------- | ----------- | ------ | ----- |
+| Portugal | This is ripe and fruity, a wine that is smooth... | Avidagos    | 87     | 15.0  |
+| US       | Tart and snappy, the flavors of lime flesh and... | NaN         | 87     | 14.0  |
+| ...      | ...                                               | ...         | ...    | ...   |
+| France   | A dry style of Pinot Gris, this is crisp with ... | NaN         | 90     | 32.0  |
+
+#### Assigning data
+
+* You can assign either a constant value:
+
+```python
+reviews['critic'] = 'everyone'
+reviews['critic']
+
+'''
+Output - 
+0         everyone
+1         everyone
+            ...   
+129969    everyone
+129970    everyone
+Name: critic, Length: 129971, dtype: object
+'''
+```
+
+* Or with an iterable of values:
+
+```python
+
+reviews['index_backwards'] = range(len(reviews), 0, -1)
+reviews['index_backwards']
+
+'''
+Output - 
+0         129971
+1         129970
+           ...  
+129969         2
+129970         1
+Name: index_backwards, Length: 129971, dtype: int64
+'''
+```
+
+## 3 - Summary Functions and Maps
+
+### Summary functions
+* Pandas provides many simple "summary functions" (not an official name) which restructure the data in some useful way.
+
+* For example, consider the describe() method:
+
+```python
+reviews.points.describe()
+
+'''
+count        129971.000000
+mean         88.447138
+             ...      
+75%          91.000000
+max          100.000000
+Name: points, Length: 8, dtype: float64
+'''
+```
+
+* This method generates a high-level summary of the attributes of the given column. It is type-aware, meaning that its output changes based on the data type of the input. The output above only makes sense for numerical data
+
+* For string data here's what we get:
+
+```python
+reviews.taster_name.describe()
+
+'''
+count         103727
+unique            19
+top       Roger Voss
+freq           25514
+Name: taster_name, dtype: object
+'''
+```
+
+* If you want to get some particular simple summary statistic about a column in a DataFrame or a Series, there is usually a helpful pandas function that makes it happen.
+
+* For example, to see the mean of the points allotted (e.g. how well an averagely rated wine does), we can use the mean() function:
+
+```python
+reviews.points.mean()
+
+'''
+88.44713820775404
+'''
+```
+* To see a list of unique values we can use the unique() function:
+
+```python
+reviews.taster_name.unique()
+
+'''
+array(['Kerin O’Keefe', 'Roger Voss', 'Paul Gregutt',
+       'Alexander Peartree', 'Michael Schachner', 'Anna Lee C. Iijima',
+       'Virginie Boone', 'Matt Kettmann', nan, 'Sean P. Sullivan',
+       'Jim Gordon', 'Joe Czerwinski', 'Anne Krebiehl\xa0MW',
+       'Lauren Buzzeo', 'Mike DeSimone', 'Jeff Jenssen',
+       'Susan Kostrzewa', 'Carrie Dykes', 'Fiona Adams',
+       'Christina Pickard'], dtype=object)
+'''
+```
+
+* To see a list of unique values and how often they occur in the dataset, we can use the value_counts() method:
+
+```python
+reviews.taster_name.value_counts()
+
+'''
+Roger Voss           25514
+Michael Schachner    15134
+                     ...  
+Fiona Adams             27
+Christina Pickard        6
+Name: taster_name, Length: 19, dtype: int64
+'''
+```
+
+### Maps
+
+* A map is a term, borrowed from mathematics, for a function that takes one set of values and "maps" them to another set of values. In data science we often have a need for creating new representations from existing data, or for transforming data from the format it is in now to the format that we want it to be in later. Maps are what handle this work, making them extremely important for getting your work done!
+
+* There are two mapping methods that you will use often.
+
+* 1 - map() is the first, and slightly simpler one. For example, suppose that we wanted to remean the scores the wines received to 0. We can do this as follows:
+
+```python
+review_points_mean = reviews.points.mean()
+reviews.points.map(lambda p: p - review_points_mean)
+
+'''
+0        -1.447138
+1        -1.447138
+            ...   
+129969    1.552862
+129970    1.552862
+Name: points, Length: 129971, dtype: float64
+'''
+```
+
+* The function you pass to map() should expect a single value from the Series (a point value, in the above example), and return a transformed version of that value. map() returns a new Series where all the values have been transformed by your function.
+
+* 2 - apply() is the equivalent method if we want to transform a whole DataFrame by calling a custom method on each row.
+
+```python
+# 1️⃣ Define the mean first
+review_points_mean = reviews.points.mean()
+
+# 2️⃣ Define the function
+def remean_points(row):
+    row.points = row.points - review_points_mean
+    return row
+
+# 3️⃣ Apply the function
+reviews = reviews.apply(remean_points, axis='columns')
+```
+
+| Country  | Description                                       | Designation  | Points    |
+| -------- | ------------------------------------------------- | ------------ | --------- |
+| Italy    | Aromas include tropical fruit, broom, brimston... | Vulkà Bianco | -1.447138 |
+| Portugal | This is ripe and fruity, a wine that is smooth... | Avidagos     | -1.447138 |
+| ...      | ...                                               | ...          | ...       |
+| France   | A dry style of Pinot Gris, this is crisp with ... | NaN          | 1.552862  |
+
+
+
+* If we had called reviews.apply() with axis='index', then instead of passing a function to transform each row, we would need to give a function to transform each column.
+
+```python
+import pandas as pd
+
+# Sample DataFrame
+reviews = pd.DataFrame({
+    'country': ['Italy', 'Portugal', 'US'],
+    'points': [87, 87, 87],
+    'price': [None, 15, 14]
+})
+
+print("Original DataFrame:")
+print(reviews)
+
+# Function to summarize a column
+def summarize_column(col):
+    if col.dtype == 'object':
+        return col.unique()  # return unique values for text columns
+    else:
+        return col.mean()    # return mean for numeric columns
+
+# Apply function to each column (axis='index' or axis=0)
+summary = reviews.apply(summarize_column, axis='index')
+print("\nSummary for each column:")
+print(summary)
+
+'''
+Original DataFrame:
+    country  points  price
+0     Italy      87   None
+1  Portugal      87   15.0
+2        US      87   14.0
+
+Summary for each column:
+country    [Italy, Portugal, US]
+points                     87.0
+price                     14.5
+dtype: object
+
+✅ Explanation:
+
+- axis='index' → the function sees each column as a Series.
+- Numeric columns (points, price) can be aggregated (mean in this case).
+- Text columns (country) can be processed differently (unique values here).
+'''
+```
+
+### Summary code
+
+```python
+import pandas as pd
+
+# Sample DataFrame
+reviews = pd.DataFrame({
+    'country': ['Italy', 'Portugal', 'US'],
+    'points': [87, 87, 87],
+    'price': [None, 15, 14]
+})
+
+print("Original DataFrame:")
+print(reviews)
+
+# --- Row-wise transformation (axis=1) ---
+# Example: combine country and points for each row
+def row_summary(row):
+    return f"{row['country']} has {row['points']} points"
+
+row_results = reviews.apply(row_summary, axis=1)
+print("\nRow-wise apply (axis=1):")
+print(row_results)
+
+# --- Column-wise transformation (axis=0 / axis='index') ---
+# Example: summarize each column
+def column_summary(col):
+    if col.dtype == 'object':
+        return col.unique()  # unique values for text columns
+    else:
+        return col.mean()    # mean for numeric columns
+
+column_results = reviews.apply(column_summary, axis=0)
+print("\nColumn-wise apply (axis=0):")
+print(column_results)
+
+'''
+Original DataFrame:
+    country     points  price
+0     Italy      87     None
+1     Portugal   87     15.0
+2     US         87     14.0
+
+Row-wise apply (axis=1):
+0         Italy has 87 points
+1    Portugal has 87 points
+2            US has 87 points
+dtype: object
+
+Column-wise apply (axis=0):
+country    [Italy, Portugal, US]
+points                     87.0
+price                     14.5
+dtype: object
+
+✅ Key differences:
+
+Row-wise (axis=1) → Function gets each row (Series) → used to combine or transform row data.
+
+Column-wise (axis=0) → Function gets each column (Series) → used to aggregate, summarize, or transform column data.
+
+'''
+
+```
+
+* Note that map() and apply() return new, transformed Series and DataFrames, respectively. They don't modify the original data they're called on.
+
+* Pandas provides many common mapping operations as built-ins. For example, here's a faster way of remeaning our points column:
+
+```python
+review_points_mean = reviews.points.mean()
+reviews.points - review_points_mean
+
+'''
+0        -1.447138
+1        -1.447138
+            ...   
+129969    1.552862
+129970    1.552862
+Name: points, Length: 129971, dtype: float64
+'''
+```
+
+* In this code we are performing an operation between a lot of values on the left-hand side (everything in the Series) and a single value on the right-hand side (the mean value). Pandas looks at this expression and figures out that we must mean to subtract that mean value from every value in the dataset.
+
+* Pandas will also understand what to do if we perform these operations between Series of equal length. For example, an easy way of combining country and region information in the dataset would be to do the following:
+
+```python
+reviews.country + " - " + reviews.region_1
+
+'''
+0            Italy - Etna
+1                     NaN
+               ...       
+129969    France - Alsace
+129970    France - Alsace
+Length: 129971, dtype: object
+'''
+```
+
+* These operators are faster than map() or apply() because they use speed ups built into pandas. All of the standard Python operators (>, <, ==, and so on) work in this manner.
+
+* However, they are not as flexible as map() or apply(), which can do more advanced things, like applying conditional logic, which cannot be done with addition and subtraction alone.
