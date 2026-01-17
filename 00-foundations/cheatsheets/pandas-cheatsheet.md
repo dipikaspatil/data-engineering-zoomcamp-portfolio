@@ -869,4 +869,585 @@ reviews.groupby(['country', 'province']).apply(lambda df: df.loc[df.points.idxma
 reviews.groupby(['country']).price.agg([len, min, max])
 ```
 
-![GroupBy Contry Province](../images/group_by_agg.png)
+![GroupBy Contry agg](../images/group_by_agg.png)
+
+### Multi-indexes
+
+* A multi-index differs from a regular index in that it has multiple levels.
+
+```python
+countries_reviewed = reviews.groupby(['country', 'province']).description.agg([len])
+countries_reviewed
+```
+
+![Multi-indexes](../images/multi_index.png)
+
+```python
+mi = countries_reviewed.index
+type(mi)
+
+'''
+pandas.core.indexes.multi.MultiIndex
+'''
+```
+
+However, in general the multi-index method you will use most often is the one for converting back to a regular index, the reset_index() method:
+
+```python
+countries_reviewed.reset_index()
+```
+
+![reset-indexes](../images/reset_index.png)
+
+### Sorting
+
+* Grouping returns data in index order, not in value order. That is to say, when outputting the result of a groupby, the order of the rows is dependent on the values in the index, not in the data.
+
+* To get data in the order want it in we can sort it ourselves.
+
+* The sort_values() method is handy for this.
+
+```python
+countries_reviewed.sort_values(by='len')
+
+'''
+	country	province	            len
+179	Greece	Muscat of Kefallonian	1
+192	Greece	Sterea Ellada	        1
+...	...	...	...
+415	US	Washington	                8639
+392	US	California	                36247
+'''
+```
+
+* sort_values() defaults to an ascending sort, where the lowest values go first. However, most of the time we want a descending sort, where the higher numbers go first. That goes thusly:
+
+```python
+countries_reviewed.sort_values(by='len', ascending=False)
+
+'''
+	country	province	len
+392	US	California	    36247
+415	US	Washington	    8639
+...	...	...	...
+63	Chile	Coelemu	    1
+149	Greece	Beotia	    1
+'''
+```
+
+* To sort by index values, use the companion method sort_index(). This method has the same arguments and default order:
+
+```python
+countries_reviewed.sort_index()
+
+'''
+	country	province	len
+0	Argentina	Mendoza Province	3264
+1	Argentina	Other	536
+...	...	...	...
+423	Uruguay	San Jose	3
+424	Uruguay	Uruguay	24
+'''
+```
+
+* Finally, know that you can sort by more than one column at a time:
+
+```python
+countries_reviewed.sort_values(by=['country', 'len'])
+'''
+	country	province	            len
+1	Argentina	Other	            536
+0	Argentina	Mendoza Province	3264
+...	...	...	...
+424	Uruguay	Uruguay	                24
+419	Uruguay	Canelones	            43
+
+'''
+```
+
+```python
+countries_reviewed.sort_values(
+    by=['country', 'len'],
+    ascending=[True, False]
+)
+
+'''
+🧠 How this works
+
+by=['country', 'len']
+First sort by country
+Then sort by len
+
+ascending=[True, False]
+country → ascending (A → Z)
+len → descending (high → low)
+
+The order of ascending must match the order of columns in by.
+'''
+```
+
+### Important Exercise
+
+```python
+reviews.head()
+```
+| Country  | Description                                       | Designation                        | Points | Price | Province          | Region 1            | Region 2          | Taster Name        | Taster Twitter Handle | Title                                             | Variety        | Winery              |
+| -------- | ------------------------------------------------- | ---------------------------------- | ------ | ----- | ----------------- | ------------------- | ----------------- | ------------------ | --------------------- | ------------------------------------------------- | -------------- | ------------------- |
+| Italy    | Aromas include tropical fruit, broom, brimston... | Vulkà Bianco                       | 87     | NaN   | Sicily & Sardinia | Etna                | NaN               | Kerin O’Keefe      | @kerinokeefe          | Nicosia 2013 Vulkà Bianco (Etna)                  | White Blend    | Nicosia             |
+| Portugal | This is ripe and fruity, a wine that is smooth... | Avidagos                           | 87     | 15.0  | Douro             | NaN                 | NaN               | Roger Voss         | @vossroger            | Quinta dos Avidagos 2011 Avidagos Red (Douro)     | Portuguese Red | Quinta dos Avidagos |
+| US       | Tart and snappy, the flavors of lime flesh and... | NaN                                | 87     | 14.0  | Oregon            | Willamette Valley   | Willamette Valley | Paul Gregutt       | @paulgwine            | Rainstorm 2013 Pinot Gris (Willamette Valley)     | Pinot Gris     | Rainstorm           |
+| US       | Pineapple rind, lemon pith and orange blossom ... | Reserve Late Harvest               | 87     | 13.0  | Michigan          | Lake Michigan Shore | NaN               | Alexander Peartree | NaN                   | St. Julian 2013 Reserve Late Harvest Riesling ... | Riesling       | St. Julian          |
+| US       | Much like the regular bottling from 2012, this... | Vintner's Reserve Wild Child Block | 87     | 65.0  | Oregon            | Willamette Valley   | Willamette Valley | Paul Gregutt       | @paulgwine            | ...                                               | ...            | ...                 |
+
+
+1) Who are the most common wine reviewers in the dataset? Create a `Series` whose index is the `taster_twitter_handle` category from the dataset, and whose values count how many reviews each person wrote.
+
+```python
+reviews_written = reviews.groupby("taster_twitter_handle").taster_twitter_handle.count()
+
+'''
+taster_twitter_handle
+@AnneInVino          3685
+@JoeCz               5147
+@bkfiona               27
+@gordone_cellars     4177
+@kerinokeefe        10776
+@laurbuzz            1835
+@mattkettmann        6332
+@paulgwine           9532
+@suskostrzewa        1085
+@vboone              9537
+@vossroger          25514
+@wawinereport        4966
+@wineschach         15134
+@winewchristina         6
+@worldwineguys       1005
+Name: taster_twitter_handle, dtype: int64
+'''
+```
+
+2) What is the best wine I can buy for a given amount of money? Create a Series whose index is wine prices and whose values is the maximum number of points a wine costing that much was given in a review. Sort the values by price, ascending (so that 4.0 dollars is at the top and 3300.0 dollars is at the bottom).
+
+```python
+best_rating_per_price = reviews.groupby("price").points.max().sort_index()
+
+'''
+price
+4.0       86
+5.0       87
+6.0       88
+7.0       91
+8.0       91
+          ..
+1900.0    98
+2000.0    97
+2013.0    91
+2500.0    96
+3300.0    88
+Name: points, Length: 390, dtype: int64
+'''
+```
+
+3) What are the minimum and maximum prices for each `variety` of wine? Create a `DataFrame` whose index is the `variety` category from the dataset and whose values are the `min` and `max` values thereof.
+
+```python
+price_extremes = reviews.groupby("variety").price.agg(["min", "max"])
+print(price_extremes)
+
+'''
+              min    max
+variety                 
+Abouriou     15.0   75.0
+Agiorgitiko  10.0   66.0
+Aglianico     6.0  180.0
+Aidani       27.0   27.0
+Airen         8.0   10.0
+...           ...    ...
+Zinfandel     5.0  100.0
+Zlahtina     13.0   16.0
+Zweigelt      9.0   70.0
+Çalkarası    19.0   19.0
+Žilavka      15.0   15.0
+
+[707 rows x 2 columns]
+'''
+```
+
+4) What are the most expensive wine varieties? Create a variable sorted_varieties containing a copy of the dataframe from the previous question where varieties are sorted in descending order based on minimum price, then on maximum price (to break ties).
+
+```python
+
+sorted_varieties = reviews.groupby("variety").price.agg(["min", "max"]).sort_values(by=["min","max"], ascending=[False, False])
+print(sorted_varieties)
+
+'''
+                                  min    max
+variety                                     
+Ramisco                         495.0  495.0
+Terrantez                       236.0  236.0
+Francisa                        160.0  160.0
+Rosenmuskateller                150.0  150.0
+Tinta Negra Mole                112.0  112.0
+...                               ...    ...
+Roscetto                          NaN    NaN
+Sauvignon Blanc-Sauvignon Gris    NaN    NaN
+Tempranillo-Malbec                NaN    NaN
+Vital                             NaN    NaN
+Zelen                             NaN    NaN
+
+[707 rows x 2 columns]
+'''
+```
+
+5) Create a `Series` whose index is reviewers and whose values is the average review score given out by that reviewer. Hint: you will need the `taster_name` and `points` columns.
+
+```python
+reviewer_mean_ratings = reviews.groupby("taster_name").points.mean()
+print(reviewer_mean_ratings)
+
+'''
+taster_name
+Alexander Peartree    85.855422
+Anna Lee C. Iijima    88.415629
+Anne Krebiehl MW      90.562551
+Carrie Dykes          86.395683
+Christina Pickard     87.833333
+Fiona Adams           86.888889
+Jeff Jenssen          88.319756
+Jim Gordon            88.626287
+Joe Czerwinski        88.536235
+Kerin O’Keefe         88.867947
+Lauren Buzzeo         87.739510
+Matt Kettmann         90.008686
+Michael Schachner     86.907493
+Mike DeSimone         89.101167
+Paul Gregutt          89.082564
+Roger Voss            88.708003
+Sean P. Sullivan      88.755739
+Susan Kostrzewa       86.609217
+Virginie Boone        89.213379
+Name: points, dtype: float64
+'''
+```
+
+6) What combination of countries and varieties are most common? Create a `Series` whose index is a `MultiIndex`of `{country, variety}` pairs. For example, a pinot noir produced in the US should map to `{"US", "Pinot Noir"}`. Sort the values in the `Series` in descending order based on wine count.
+
+```python
+country_variety_counts = reviews.groupby(["country", "variety"]).size().sort_values(ascending=False)
+print(country_variety_counts)
+
+'''
+country  variety                 
+US       Pinot Noir                  9885
+         Cabernet Sauvignon          7315
+         Chardonnay                  6801
+France   Bordeaux-style Red Blend    4725
+Italy    Red Blend                   3624
+                                     ... 
+Mexico   Cinsault                       1
+         Grenache                       1
+         Merlot                         1
+         Rosado                         1
+Uruguay  White Blend                    1
+Length: 1612, dtype: int64
+'''
+```
+
+## 5 - Data Types and Missing Values
+
+### Dtypes
+
+```python
+reviews.price.dtype # dtype('float64')
+
+reviews.dtypes
+
+'''
+country        object
+description    object
+                ...  
+variety        object
+winery         object
+Length: 13, dtype: object
+'''
+```
+
+* Columns consisting entirely of strings do not get their own type; they are instead given the object type.
+
+* It's possible to convert a column of one type into another wherever such a conversion makes sense by using the astype() function.
+
+* For example, we may transform the points column from its existing int64 data type into a float64 data type:
+
+```python
+reviews.points.astype('float64')
+
+'''
+0         87.0
+1         87.0
+          ... 
+129969    90.0
+129970    90.0
+Name: points, Length: 129971, dtype: float64
+'''
+```
+
+* A DataFrame or Series index has its own dtype, too:
+
+```python
+reviews.index.dtype # dtype('int64')
+```
+
+### Missing data
+
+* Entries missing values are given the value NaN, short for "Not a Number".
+
+* For technical reasons these NaN values are always of the float64 dtype.
+
+* To select NaN entries you can use pd.isnull() (or its companion pd.notnull()).
+
+```python
+reviews[pd.isnull(reviews.country)]
+```
+
+| Country | Description                                       | Designation    | Points |
+| ------- | ------------------------------------------------- | -------------- | ------ |
+| NaN     | Amber in color, this wine has aromas of peach ... | Asureti Valley | 87     |
+| NaN     | Soft, fruity and juicy, this is a pleasant, si... | Partager       | 83     |
+| ...     | ...                                               | ...            | ...    |
+| NaN     | A blend of 60% Syrah, 30% Cabernet Sauvignon a... | Shah           | 90     |
+| NaN     | This wine offers a delightful bouquet of black... | NaN            | 91     |
+
+
+* Replacing missing values can be done using - fillna().
+
+* For example, we can simply replace each NaN with an "Unknown":
+
+```python
+reviews.region_2.fillna("Unknown")
+
+'''
+0         Unknown
+1         Unknown
+           ...   
+129969    Unknown
+129970    Unknown
+Name: region_2, Length: 129971, dtype: object
+'''
+```
+
+* Or we could fill each missing value with the first non-null value that appears sometime after the given record in the database. This is known as the backfill strategy.
+
+```python
+# Backfill missing values
+df = df.bfill()
+
+# OR
+df.fillna(method='bfill')
+
+# Backfill a single column
+df['col'] = df['col'].bfill()
+
+# forward fill - Use previous valid value
+df.ffill() 
+```
+
+* Example - 
+```python
+
+import pandas as pd
+
+df = pd.DataFrame({
+    'price': [10, None, None, 25, None],
+    'points': [90, None, 92, None, 95]
+})
+
+df
+
+'''
+| index | price | points |
+| ----- | ----- | ------ |
+| 0     | 10    | 90     |
+| 1     | NaN   | NaN    |
+| 2     | NaN   | 92     |
+| 3     | 25    | NaN    |
+| 4     | NaN   | 95     |
+'''
+
+# Apply backfill
+
+df_bfilled = df.bfill()
+df_bfilled
+
+'''
+| index | price | points |
+| ----- | ----- | ------ |
+| 0     | 10    | 90     |
+| 1     | 25    | 92     |
+| 2     | 25    | 92     |
+| 3     | 25    | 95     |
+| 4     | NaN   | 95     |
+'''
+
+```
+
+* Alternatively, we may have a non-null value that we would like to replace. 
+
+```python
+reviews.taster_twitter_handle.replace("@kerinokeefe", "@kerino")
+
+'''
+0            @kerino
+1         @vossroger
+             ...    
+129969    @vossroger
+129970    @vossroger
+Name: taster_twitter_handle, Length: 129971, dtype: object
+'''
+```
+
+### Imp Exercise-  
+
+* Q - Sometimes the price column is null. How many reviews in the dataset are missing a price?
+
+```python
+n_missing_prices = reviews.price.isnull().sum()
+```
+
+* Note - Difference between count(), size() and isnull().sum()
+
+    - count() - counts missing values
+    - size() - counts all values
+    - isnull().sum() - counts null values
+
+```python
+reviews.price # [10.0, NaN, 20.0, NaN]
+
+reviews.price.count() # 2
+
+reviews.price.size #  4 OR equivalent len(reviews.price)
+
+reviews.price.isnull().sum() # 2 
+```
+
+* Q - What are the most common wine-producing regions? Create a Series counting the number of times each value occurs in the `region_1` field. This field is often missing data, so replace missing values with `Unknown`. Sort in descending order.  Your output should look something like this:
+
+```
+Unknown                    21247
+Napa Valley                 4480
+                           ...  
+Bardolino Superiore            1
+Primitivo del Tarantino        1
+Name: region_1, Length: 1230, dtype: int64
+```
+
+```python
+reviews_per_region = reviews.region_1.fillna("Unknown").value_counts()
+```
+
+* why not - reviews_per_region = reviews.region_1.fillna("Unknown").groupby("region_1").region_1.count()
+
+    - After this - reviews.region_1.fillna("Unknown"), you no longer have a DataFrame — you now have a Series. Series don't have column name. So we don't have region_1
+
+## 6 - Renaming and Combining
+
+### Renaming
+
+* Function rename() lets you change index names and/or column names.
+
+* For example, to change the points column in our dataset to score, we would do:
+
+```python
+reviews.rename(columns={'points': 'score'})
+```
+
+* rename() lets you rename index or column values by specifying a index or column keyword parameter, respectively. 
+
+```python
+df_indexed = df.set_index('country')
+
+# it set specific existing column as index
+```
+
+* It supports a variety of input formats, but usually a Python dictionary is the most convenient.
+
+* Here is an example using it to rename some elements of the index.
+
+```python
+reviews.rename(index={0: 'firstEntry', 1: 'secondEntry'})
+```
+
+* You'll probably rename columns very often, but rename index values very rarely. For that, set_index() is usually more convenient.
+
+* Both the row index and the column index can have their own name attribute. The complimentary rename_axis() method may be used to change these names. For example:
+
+```python
+reviews.rename_axis("wines", axis='rows').rename_axis("fields", axis='columns')
+```
+
+![Rename axis](../images/rename_axis.png)
+
+### Combining
+
+* When performing operations on a dataset, we will sometimes need to combine different DataFrames and/or Series in non-trivial ways. Pandas has three core methods for doing this. 
+
+    - concat()
+    - join()
+    - merge()
+
+* The simplest combining method is concat(). Given a list of elements, this function will smush those elements together along an axis. This is useful when we have data in different DataFrame or Series objects but having the same fields (columns). 
+
+```python
+canadian_youtube = pd.read_csv("../input/youtube-new/CAvideos.csv")
+british_youtube = pd.read_csv("../input/youtube-new/GBvideos.csv")
+
+pd.concat([canadian_youtube, british_youtube])
+```
+
+* join() lets you combine different DataFrame objects which have an index in common. For example, to pull down videos that happened to be trending on the same day in both Canada and the UK, we could do the following:
+
+```python
+left = canadian_youtube.set_index(['title', 'trending_date'])
+right = british_youtube.set_index(['title', 'trending_date'])
+
+left.join(right, lsuffix='_CAN', rsuffix='_UK')
+```
+
+| title                                                                  | trending_date | video_id_CAN | channel_title_CAN               | tags_UK | views_UK |
+| ---------------------------------------------------------------------- | ------------- | ------------ | ------------------------------- | ------- | -------- |
+| !! THIS VIDEO IS NOTHING BUT PAIN !! | Getting Over It - Part 7        | 18.04.01      | PNn8sECd7io  | Markiplier                      | NaN     | NaN      |
+| #1 Fortnite World Rank - 2,323 Solo Wins!                              | 18.09.03      | DvPW66IFhMI  | AlexRamiGaming                  | NaN     | NaN      |
+
+
+* The lsuffix and rsuffix parameters are necessary here because the data has the same column names in both British and Canadian datasets. If this wasn't true (because, say, we'd renamed them beforehand) we wouldn't need them.
+
+* merge() combines two DataFrames based on common columns or indices.
+
+```python
+pd.merge(left, right, on='key_column', how='type_of_join', suffixes=('_left', '_right'))
+
+'''
+left: first DataFrame
+
+right: second DataFrame
+
+on: column(s) to join on (must exist in both)
+
+how: type of join — 'left', 'right', 'inner', 'outer'
+
+suffixes: what to add to overlapping column names
+
+outer
+All rows from both tables, NaN where missing
+'''
+```
+
+```python
+# Merge two DataFrames on a column
+combined = pd.merge(
+    left_df,
+    right_df,
+    on='key_column',
+    how='left',        # 'inner', 'outer', 'right'
+    suffixes=('_left', '_right')
+)
+```
