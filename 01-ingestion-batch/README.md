@@ -69,6 +69,46 @@ PostgreSQL (Docker Container)
 > ⚠️ These are *starter steps*.  
 > You can refine them once you’ve executed the pipeline yourself.
 
-1. Build and start containers:
+1️⃣ Start Docker containers
 ```bash
 docker-compose up --build
+```
+Launch PostgreSQL and Python ingestion containers.
+
+2️⃣ Check running containers
+```bash
+docker ps
+```
+Ensure both Postgres and Python containers are running.
+
+3️⃣ Connect to Postgres
+```bash
+psql -h localhost -U root -d ny_taxi
+```
+Or connect using pgAdmin/DBeaver with host localhost and port 5432.
+
+4️⃣ Run Python ingestion script
+```
+docker exec -it <python-container-id> python ingest_data.py
+```
+Load CSV dataset into Postgres using Pandas + SQLAlchemy.
+
+5️⃣ Verify data
+```sql
+SELECT COUNT(*) FROM taxi_data;
+```
+Confirm the data is loaded successfully.
+
+6️⃣ Stop containers
+```bash
+docker compose down
+```
+Clean up all running containers.
+
+### Key Files
+
+- `Dockerfile` – Builds Python container with dependencies for ingestion
+- `docker-compose.yml` – Runs Postgres + Python containers, sets env variables
+- `ingest_data.py` – Reads CSV in chunks using Pandas, writes to Postgres
+- `requirements.txt` – Python libraries: pandas, sqlalchemy, psycopg2
+
