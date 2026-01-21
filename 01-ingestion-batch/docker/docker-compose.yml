@@ -1,0 +1,65 @@
+version: "3.8"  # Docker Compose file format version
+
+services:
+
+  # ==========================================================
+  # PostgreSQL service
+  # ==========================================================
+  postgres:
+    image: postgres:15               # Official Postgres image
+    container_name: postgres          # Container name (also used as hostname)
+    environment:
+      POSTGRES_USER: root             # DB username
+      POSTGRES_PASSWORD: root         # DB password
+      POSTGRES_DB: ny_taxi            # Default database created on startup
+    volumes:
+      # Persist database data so it survives container restarts
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # Expose Postgres to host machine (useful for local tools)
+      - "5432:5432"
+
+  # ==========================================================
+  # pgAdmin service (PostgreSQL Web UI)
+  # ==========================================================
+  pgadmin:
+    image: dpage/pgadmin4             # Official pgAdmin image
+    container_name: pgadmin
+    environment:
+      # Credentials to log in to pgAdmin UI
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      # Access pgAdmin in browser at http://localhost:8080
+      - "8080:80"
+    depends_on:
+      # Ensure Postgres container starts before pgAdmin
+      - postgres
+
+  # ==========================================================
+  # Data ingestion service
+  # ==========================================================
+  ingest:
+    build: .                          # Build image from Dockerfile in current directory
+    container_name: ingest
+    depends_on:
+      # Ingestion requires Postgres to be running
+      - postgres
+    environment:
+      # These environment variables are read inside ingest_data.py
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: ny_taxi
+
+      # IMPORTANT:
+      # Use the service name "postgres" as hostname
+      # because all containers share the same Docker network
+      POSTGRES_HOST: postgres
+    command: python ingest_data.py    # Run ingestion script on container start
+
+# ==========================================================
+# Named volumes
+# ==========================================================
+volumes:
+  # Stores Postgres data outside the container lifecycle
+  pgdata:
