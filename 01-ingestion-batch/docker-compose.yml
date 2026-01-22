@@ -1,5 +1,3 @@
-version: "3.8"  # Docker Compose file format version
-
 services:
 
   # ==========================================================
@@ -40,7 +38,9 @@ services:
   # Data ingestion service
   # ==========================================================
   ingest:
-    build: .                          # Build image from Dockerfile in current directory
+    build:
+      context: .         # Build image from Dockerfile. set context to module root
+      dockerfile: docker/Dockerfile  # path to Dockerfile from context
     container_name: ingest
     depends_on:
       # Ingestion requires Postgres to be running

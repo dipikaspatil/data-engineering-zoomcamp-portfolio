@@ -18,10 +18,7 @@ engine = create_engine(f"postgresql://{user}:{password}@{host}:5432/{db}")
 # -----------------------------
 # Dataset configuration
 # -----------------------------
-CSV_URL = (
-    "https://raw.githubusercontent.com/DataTalksClub/"
-    "nyc-tlc-data/main/yellow_tripdata_2021-01.csv"
-)
+CSV_URL = "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz"
 
 TABLE_NAME = "taxi_data"
 CHUNKSIZE = 100_000
@@ -31,9 +28,14 @@ CHUNKSIZE = 100_000
 # -----------------------------
 print("Starting ingestion process...")
 
+print(f"Downloading data from: {CSV_URL}")
+
 for i, chunk in enumerate(
     tqdm(
-        pd.read_csv(CSV_URL, chunksize=CHUNKSIZE),
+        pd.read_csv(
+        CSV_URL,
+        compression="gzip",
+        chunksize=CHUNKSIZE),
         desc="Ingesting CSV chunks"
     )
 ):

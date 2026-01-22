@@ -7,11 +7,11 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Copy requirements and install
-COPY ../requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy ingestion script
-COPY ingest_data.py .
+COPY scripts/ingest_data.py .
 
 # Set default command
 CMD ["python", "ingest_data.py"]
