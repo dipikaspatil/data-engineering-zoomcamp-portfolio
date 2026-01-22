@@ -529,6 +529,29 @@ docker-compose up --build
 `docker-compose up` due to Docker log buffering. The ingestion
 process still runs correctly and completes successfully. 
 
+### Cleanup
+
+```bash
+docker-compose down
+```
+
+logs - 
+
+```text
+...
+pgadmin   | [2026-01-22 01:16:44 +0000] [1] [INFO] Shutting down: Master
+pgadmin exited with code 0
+postgres  | 2026-01-22 01:16:45.567 UTC [1] LOG:  received fast shutdown request
+postgres  | 2026-01-22 01:16:45.574 UTC [1] LOG:  aborting any active transactions
+postgres  | 2026-01-22 01:16:45.589 UTC [1] LOG:  background worker "logical replication launcher" (PID 31) exited with exit code 1
+postgres  | 2026-01-22 01:16:45.605 UTC [26] LOG:  shutting down
+postgres  | 2026-01-22 01:16:45.607 UTC [26] LOG:  checkpoint starting: shutdown immediate
+postgres  | 2026-01-22 01:16:45.626 UTC [26] LOG:  checkpoint complete: wrote 0 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.011 s, sync=0.001 s, total=0.020 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=194811 kB
+postgres  | 2026-01-22 01:16:45.641 UTC [1] LOG:  database system is shut down
+postgres exited with code 0
+```
+
+
 
 
 
