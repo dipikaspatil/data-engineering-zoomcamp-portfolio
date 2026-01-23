@@ -13,7 +13,7 @@ services:
       - pgdata:/var/lib/postgresql/data
     ports:
       # Expose Postgres to host machine (useful for local tools)
-      5432:5432
+      - "5432:5432"
 
   # pgAdmin Service (PostgreSQL Web UI)
   pgadmin:
@@ -30,27 +30,32 @@ services:
       # Ensures Postgres container starts before pgAdmin
       - postgres
 
-    # Data ingestion service
-    ingest:
-      build:
-        context: . # Build image from Dockerfile. set context to module root
-        dockerfile: docker/Dockerfile # path to Dockerfile from context
-      container_name: ingest
-      depends_on:
-        # Ingestion requires Postgres to be running
-        - postgres
-      environment:
-        # These environment variables are read inside ingest_data.py
-        POSTGRES_USER: root
-        POSTGRES_PASSWORD: root
-        POSTGRES_DB: ny_green_taxi
+  # Data ingestion service
+  ingest:
+    build:
+      context: . # Build image from Dockerfile. set context to module root
+      dockerfile: docker/Dockerfile # path to Dockerfile from context
+    container_name: ingest
+    depends_on:
+      # Ingestion requires Postgres to be running
+      - postgres
+    environment:
+      # These environment variables are read inside ingest_data.py
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: ny_green_taxi
       # IMPORTANT:
       # Use the service name "postgres" as hostname
       # because all containers share the same Docker network
       POSTGRES_HOST: postgres
-      command: python scripts/ingest_data_hw1.py    # Run ingestion script on container start Overrites command in Dockerfile.
-      
-
+    command: python ingest_data_hw1.py    # Run ingestion script on container start Overrites command in Dockerfile.
+    
+# ==========================================================
+# Named volumes
+# ==========================================================
+volumes:
+  # Stores Postgres data outside the container lifecycle
+  pgdata:
 
 
 

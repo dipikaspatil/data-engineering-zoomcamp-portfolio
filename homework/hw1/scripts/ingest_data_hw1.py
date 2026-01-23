@@ -20,7 +20,7 @@ engine = create_engine(f"postgresql://{user}:{password}@{host}:5432/{db}")
 GREEN_TAXI_PARQUET_FILE = "/data/green_tripdata_2025-11.parquet"  # Path inside container
 TAXI_ZONE_FILE = "/data/taxi_zone_lookup.csv"  # Path inside container
 
-GREEN_NY_TAXI_TABLE = "gree_ny_taxi_data"
+GREEN_NY_TAXI_TABLE = "green_ny_taxi_data"
 TAXI_ZONES_TABLE = "zones"
 
 CHUNKSIZE = 100_000
