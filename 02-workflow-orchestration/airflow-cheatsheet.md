@@ -549,32 +549,634 @@ from airflow.models.base import chain
 chain(task1, [task2, task3], task4)
 ```
 
-## Sample practice project
-### Instructions
-#### Step 1: Defining the DAG
-Create a dag file check_dag.py. Then, define a DAG with the identifier check_dag.
+## XCOMs (Cross-Communication)
 
-We expect check_dag to run every day at midnight from the 1st of January 2025. 
+### What are XComs?
 
-Also, the DAG should have the following description "DAG to check data" and belongs to the data_engineering team.
+- XCom = Cross-Communication.
+- Mechanism to pass small amounts of data between tasks in a DAG.
+- Stored in Airflow's metadata database.
+- Only suitable for lightweight data (strings, numbers, JSON).
+- ⚠️ Avoid large files or dataframes — use storage like S3, GCS, or DB instead.
 
-#### Step 2: Creating the Tasks
-We want to add three tasks to this DAG.
+### How to use XComs
 
-The first task executes the following Bash command: echo "Hi there!" >/tmp/dummy, to create a file dummy in the tmp directory with "Hi there!". The task's name should be create_file
+#### 1. Push data
 
-Use the @task.bash decorator for Bash commands.
+- From a PythonOperator / @task-decorated function:
 
-The second task executes the following  Bash command: test -f /tmp/dummy, to verify that the file dummy exists in the tmp directory. The task's name should be check_file
+```python
+from airflow.decorators import dag, task
+from datetime import datetime
 
-The third task executes the following Python function:
+@dag(start_date=datetime(2026,1,1), schedule="@daily", catchup=False)
+def xcom_example():
 
-print(open('/tmp/dummy', 'rb').read())
-to read and print on the standard output the content of the dummy file.
+    @task
+    def push_data():
+        return "Hello XCom"  # Auto-pushed when using @task
 
-#### Step 3: Defining the dependencies
-You should define the dependencies to get the order of execution:
+    push_data()
+```
 
-create-file -> check_file_exists -> read_file
+- Using xcom_push in traditional PythonOperator:
+```python
+from airflow.operators.python import PythonOperator
 
-Finally, make sure that you have no errors by going to the Airflow UI. You should be able to see your DAG.
+def my_func(ti):
+    ti.xcom_push(key='message', value='Hello XCom')
+
+task = PythonOperator(
+    task_id='push_task',
+    python_callable=my_func
+)
+```
+
+#### 2. Pull data
+
+- From a PythonOperator / @task function:
+
+```python
+@task
+def pull_data(ti):
+    msg = ti.xcom_pull(task_ids='push_data')  # Pulls return value of push_data
+    print(msg)  # Output: Hello XCom
+```
+
+- Using xcom_pull in traditional PythonOperator:
+
+```python
+def pull_func(ti):
+    msg = ti.xcom_pull(task_ids='push_task', key='message')
+    print(msg)
+```
+
+### List XComs:
+
+```bash
+airflow tasks xcom_pull <dag_id> <task_id>
+airflow tasks xcom_list <dag_id>
+```
+
+### Example using XCOM
+
+```python
+from airflow.decorators import dag, task
+from datetime import datetime
+
+@dag(start_date=datetime(2026,1,1), schedule="@daily", catchup=False)
+def xcom_dag():
+
+    @task
+    def push():
+        return {"count": 10}
+
+    @task
+    def pull(data):
+        print(f"Received data: {data}")
+
+    pull(push())
+
+xcom_dag()
+```
+
+- Output in logs:
+```logs
+Received data: {'count': 10}
+```
+
+## Sensor
+
+### What are Sensors?
+
+- Sensors are special Airflow operators that wait for a condition to be met.
+- They keep checking (“poke”) until:
+    - the condition is true ✅
+    - or they timeout ❌
+- Common use cases:
+    - Wait for a file to arrive
+    - Wait for a table/partition
+    - Wait for another DAG/task
+
+### Key Sensor Concepts
+
+#### Airflow Sensor Parameters
+
+| Term              | Meaning                                                |
+|-------------------|--------------------------------------------------------|
+| **poke_interval** | How often (in seconds) the sensor checks the condition |
+| **timeout**       | Max time (in seconds) to wait before failing           |
+| **mode**          | How the sensor runs (`poke` or `reschedule`)           |
+| **soft_fail**     | Mark task as SKIPPED instead of FAILED on timeout      |
+
+### Sensor Modes (Important!)
+
+#### 1. poke (default)
+- Sensor occupies a worker slot while waiting
+- Simple but inefficient for long waits
+
+```python
+mode="poke"
+```
+
+#### 2. reschedule (recommended)
+- Sensor releases worker slot between checks
+- Best practice for production
+
+```python
+mode="reschedule"
+```
+
+✅ Always prefer reschedule unless you have a good reason
+
+### Commonly Used Sensors
+
+#### 1. FileSensor
+
+Wait for a file to exist.
+
+```python
+from airflow.sensors.filesystem import FileSensor
+
+wait_for_file = FileSensor(
+    task_id="wait_for_file",
+    filepath="/tmp/data.csv",
+    poke_interval=30,
+    timeout=300,
+    mode="reschedule"
+)
+```
+
+#### 2. ExternalTaskSensor
+
+Wait for a task in another DAG.
+
+```python
+from airflow.sensors.external_task import ExternalTaskSensor
+
+wait_for_upstream = ExternalTaskSensor(
+    task_id="wait_for_external_task",
+    external_dag_id="upstream_dag",
+    external_task_id="task_a",
+    poke_interval=60,
+    timeout=600,
+    mode="reschedule"
+)
+```
+
+#### 3. TimeSensor
+
+Wait until a specific time of day.
+
+```python
+from airflow.sensors.time_sensor import TimeSensor
+from datetime import time
+
+wait_until_6am = TimeSensor(
+    task_id="wait_until_6am",
+    target_time=time(6, 0, 0)
+)
+```
+
+#### 4. SQL Sensor
+
+Wait for a condition in a database.
+
+```python
+from airflow.providers.postgres.sensors.postgres import PostgresSensor
+
+wait_for_data = PostgresSensor(
+    task_id="wait_for_data",
+    postgres_conn_id="postgres_default",
+    sql="SELECT 1 FROM my_table LIMIT 1",
+    poke_interval=60,
+    timeout=300,
+    mode="reschedule"
+)
+```
+
+#### 5. Custom Python Sensor
+
+Use your own logic.
+
+```python
+from airflow.sensors.base import BaseSensorOperator
+
+class MySensor(BaseSensorOperator):
+    def poke(self, context):
+        return True  # condition met
+```
+
+## Best Practices
+
+- ✅ Use mode="reschedule"
+- ✅ Keep poke_interval reasonable
+- ❌ Don’t use sensors for heavy computation
+- ❌ Don’t wait on large data movement
+
+## When NOT to use Sensors
+
+- Long waits → use event-driven pipelines
+- Waiting on large files → use storage + metadata checks
+- High-frequency polling → consider Deferrable Sensors
+
+## Deferrable Sensors (Advanced)
+
+- Introduced to reduce resource usage
+- Use async triggers
+- Ideal for cloud-scale pipelines
+
+## Sensors vs Triggers
+
+`Sensors wait for conditions using polling, while triggers enable event-driven async execution via deferrable operators that don’t occupy workers.`
+
+Mental Model (Easy to Remember)
+
+🕒 Sensor → “Are we there yet?” (keeps asking)
+
+🔔 Trigger → “Ring me when it’s ready” (gets notified)
+
+High-level Difference
+| Feature        | Sensors              | Triggers                       |
+| -------------- | -------------------- | ------------------------------ |
+| Purpose        | Wait for a condition | Power async / deferrable tasks |
+| Introduced     | Early Airflow        | Airflow 2.x                    |
+| Execution      | Polling              | Event-driven                   |
+| Resource usage | Can be heavy         | Very lightweight               |
+| Runs where     | Worker               | Triggerer process              |
+
+### Sensors
+- What they do
+    - Sensors poll repeatedly until a condition is met
+    - Example conditions:
+        - File exists
+        - Table has rows
+        - Another DAG finishes
+
+- How they work
+    - Check condition every poke_interval
+    - Stop when condition is true or timeout occurs
+
+```python
+FileSensor(
+    task_id="wait_for_file",
+    filepath="/tmp/data.csv",
+    mode="reschedule"
+)
+```
+
+#### Pros
+
+✅ Simple
+
+✅ Easy to understand
+
+✅ Great for short waits
+
+
+#### Cons
+
+❌ Polling based
+
+❌ Can still be inefficient
+
+❌ Poor choice for long waits
+
+### Triggers
+- What they do
+    - Triggers enable async waiting
+    - Used internally by Deferrable Operators
+    - Wake tasks only when an event occurs
+
+- How they work
+    1. Task defers itself
+    2. Trigger runs asynchronously
+    3. Trigger fires → task resumes
+
+🧠 No polling, no worker usage
+
+#### Where Triggers Run
+
+| Component     | Role                              |
+| ------------- | --------------------------------- |
+| **Triggerer** | Runs trigger logic                |
+| **Scheduler** | Resumes deferred task             |
+| **Worker**    | Executes task after trigger fires |
+
+
+#### Triggers Example (Conceptual)
+
+```python
+class MyTrigger(BaseTrigger):
+    async def run(self):
+        while not condition_met:
+            await asyncio.sleep(30)
+        yield TriggerEvent(True)
+```
+
+⚠️ Triggers are not used directly in DAGs
+They are used by deferrable operators
+
+## Deferrable Sensors (Best of both worlds)
+
+| Classic Sensor | Deferrable Sensor |
+| -------------- | ----------------- |
+| Polling        | Event-driven      |
+| Uses worker    | Uses triggerer    |
+| Slower         | Scales better     |
+
+
+```python
+FileSensor(
+    task_id="wait_for_file",
+    filepath="/tmp/data.csv",
+    deferrable=True
+)
+```
+
+## Airflow CLI (Docker / docker-compose) 🐳
+
+Assumes:
+
+- You are using docker-compose
+- Airflow services like airflow-webserver, airflow-scheduler
+- Airflow home: /opt/airflow
+
+#### 1. Basic Docker-Compose Commands
+
+Start Airflow (foreground logs)
+```bash
+docker-compose up
+```
+
+Start Airflow (background)
+```bash
+docker-compose up -d
+```
+
+Stop services
+```bash
+docker-compose down
+```
+
+Stop + remove volumes (⚠️ deletes metadata DB)
+```bash
+docker-compose down -v
+```
+
+#### 2. Run Airflow CLI Commands (One-off)
+
+Use docker-compose run for CLI commands
+
+Check Airflow version
+
+```bash
+docker-compose run --rm airflow-webserver airflow version
+```
+
+List DAGs
+```bash
+docker-compose run --rm airflow-webserver airflow dags list
+```
+
+List DAG tasks
+```bash
+docker-compose run --rm airflow-webserver airflow tasks list <dag_id>
+```
+
+Show DAG details
+```bash
+docker-compose run --rm airflow-webserver airflow dags show <dag_id>
+```
+
+#### 3. Trigger & Manage DAG Runs
+
+Trigger DAG manually
+```bash
+docker-compose run --rm airflow-webserver airflow dags trigger <dag_id>
+```
+
+Pause a DAG
+```bash
+docker-compose run --rm airflow-webserver airflow dags pause <dag_id>
+```
+
+Unpause a DAG
+```bash
+docker-compose run --rm airflow-webserver airflow dags unpause <dag_id>
+```
+
+#### 4. Task-Level Commands
+
+Run a task manually (debugging)
+```bash
+docker-compose run --rm airflow-webserver \
+  airflow tasks run <dag_id> <task_id> 2026-01-01
+```
+
+Clear task instances
+```bash
+docker-compose run --rm airflow-webserver \
+  airflow tasks clear <dag_id>
+```
+
+#### 5. Logs & Debugging
+
+View service logs
+```bash
+docker-compose logs airflow-webserver
+docker-compose logs airflow-scheduler
+```
+
+Follow logs
+```bash
+docker-compose logs -f airflow-scheduler
+```
+
+#### 6. Exec into a Running Container
+
+Enter webserver container
+```bash
+docker-compose exec airflow-webserver bash
+```
+
+Enter scheduler container
+```bash
+docker-compose exec airflow-scheduler bash
+```
+
+📌 Useful for:
+
+Inspecting /opt/airflow/dags
+
+Checking /tmp
+
+Debugging files & configs
+
+#### 7. Inspect DAGs Folder Inside Container
+```bash
+docker-compose exec airflow-webserver ls -l /opt/airflow/dags
+```
+
+#### 8. Database & Metadata
+
+Initialize metadata DB
+```bash
+docker-compose run --rm airflow-webserver airflow db migrate
+```
+
+Check DB status
+```bash
+docker-compose run --rm airflow-webserver airflow db check
+```
+
+#### 9. User Management
+
+Create admin user
+```bash
+docker-compose run --rm airflow-webserver airflow users create \
+  --username admin \
+  --firstname Admin \
+  --lastname User \
+  --role Admin \
+  --email admin@example.com
+```
+
+List users
+```bash
+docker-compose run --rm airflow-webserver airflow users list
+```
+
+#### 10. Variables & Connections
+
+List variables
+```bash
+docker-compose run --rm airflow-webserver airflow variables list
+```
+
+Set variable
+```bash
+docker-compose run --rm airflow-webserver \
+  airflow variables set ENV dev
+```
+
+List connections
+```bash
+docker-compose run --rm airflow-webserver airflow connections list
+```
+
+#### 11. Advanced / Power User
+
+Open Python shell inside container
+```bash
+docker-compose exec airflow-webserver python
+```
+
+Check Airflow config
+```bash
+docker-compose run --rm airflow-webserver airflow config list
+```
+
+#### Debugging & Local Testing
+
+Test a Single Airflow Task (No Scheduler)
+```bash
+docker-compose run --rm airflow-webserver \
+  airflow tasks test <dag_id> <task_id> <execution_date>
+
+# Example
+docker-compose run --rm airflow-webserver \
+  airflow tasks test check_dag read_file 2026-01-29
+```
+
+To identify DAG import or parsing errors after an Airflow upgrade, use `airflow dags list-import-errors`, which reports Python exceptions preventing DAGs from loading.
+```bash
+docker-compose run --rm airflow-webserver \
+  airflow dags list-import-errors
+```
+
+## 🔗 Connections & Variables
+
+### 1️⃣ Connections
+Connections are Airflow’s way to store credentials and endpoints (databases, APIs, cloud services).
+
+List connections
+```bash
+docker-compose run --rm airflow-webserver airflow connections list
+```
+
+Add a connection
+```bash
+docker-compose run --rm airflow-webserver \
+  airflow connections add 'my_postgres' \
+  --conn-type 'postgres' \
+  --conn-host 'postgres' \
+  --conn-login 'airflow' \
+  --conn-password 'airflow' \
+  --conn-schema 'airflow' \
+  --conn-port 5432
+
+```
+
+Get a connection
+```bash
+docker-compose run --rm airflow-webserver \
+airflow connections get my_postgres
+```
+
+Delete a connection
+```bash
+docker-compose run --rm airflow-webserver \
+airflow connections delete my_postgres
+```
+
+Connections are stored in Airflow metadata DB, accessible in the UI under Admin → Connections.
+
+### 2️⃣ Variables
+Variables are key-value pairs stored in Airflow metadata DB, useful for runtime parameters.
+
+List all variables
+```bash
+docker-compose run --rm airflow-webserver airflow variables list
+```
+
+Get a variable
+```bash
+docker-compose run --rm airflow-webserver airflow variables get my_var
+```
+
+Use --default to avoid errors if it’s missing:
+```bash
+docker-compose run --rm airflow-webserver airflow variables get my_var --default 'default_value'
+```
+
+Set a variable
+```bash
+docker-compose run --rm airflow-webserver airflow variables set my_var '42'
+```
+
+Delete a variable
+```bash
+docker-compose run --rm airflow-webserver airflow variables delete my_var
+```
+
+### Export / Import variables
+
+Export all variables to JSON:
+```bash
+docker-compose run --rm airflow-webserver airflow variables export /tmp/variables.json
+```
+
+Import variables from JSON:
+```bash
+docker-compose run --rm airflow-webserver airflow variables import /tmp/variables.json
+```
+
+#### Notes / Tips
+
+- Connections → credentials / endpoints
+- Variables → runtime parameters / config values
+- Both are stored in Airflow metadata DB and can be managed via CLI, UI, or API
+
+
+
