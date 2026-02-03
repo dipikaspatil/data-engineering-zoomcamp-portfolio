@@ -1,0 +1,82 @@
+id: taxi_csv_inspect_multiple
+namespace: zoomcamp
+description: >
+  Extract NYC taxi CSVs for a given year and months.  Captures row count for each CSV and purges files after.
+
+concurrency:
+  limit: 1
+
+inputs:
+  - id: taxi
+    type: SELECT
+    displayName: Select taxi type
+    values: [ yellow, green ]
+    defaults: yellow
+
+  - id: year
+    type: STRING
+    displayName: Year to process
+    defaults: "2020"
+
+  - id: months
+    type: ARRAY
+    itemType: STRING
+    displayName: Months to process
+    defaults: [ "01", "02", "03" ]
+
+tasks:
+  - id: loop_months
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{inputs.months}}"
+    tasks:
+      - id: extract_csv
+        type: io.kestra.plugin.scripts.shell.Commands
+        outputFiles:
+          - "*.csv"
+        taskRunner:
+          type: io.kestra.plugin.core.runner.Process
+        commands:
+          - wget -qO- https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{{inputs.taxi}}/{{inputs.taxi}}_tripdata_{{inputs.year}}-{{taskrun.value}}.csv.gz | gunzip > {{inputs.taxi}}_tripdata_{{inputs.year}}-{{taskrun.value}}.csv
+
+      - id: count_rows_duckdb
+        type: io.kestra.plugin.jdbc.duckdb.Queries
+        fetch: true # This enables row fetching so it isn't {}
+        inputFiles:
+          data.csv: "{{ outputs.extract_csv[taskrun.value].outputFiles[inputs.taxi ~ '_tripdata_' ~ inputs.year ~ '-' ~ taskrun.value ~ '.csv'] }}"
+        sql: |
+          INSTALL json; -- Install the JSON extension
+          LOAD json; -- Load the JSON extension
+          SELECT count(*) as total 
+          FROM read_csv_auto('data.csv');
+  - id: debug_log
+    type: io.kestra.plugin.core.log.Log
+    message: "Raw Outputs: {{ outputs.count_rows_duckdb | json }}"
+  - id: total_count_python
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    containerImage: python:3.11-slim
+    script: |
+      import json
+      from kestra import Kestra
+
+      # Load the map of months
+      data = {{ outputs.count_rows_duckdb | json }}
+
+      grand_total = 0
+      # Based on your logs: data is { "01": { "outputs": [ { "rows": [{"total": 123}] } ] } }
+      for month_key, month_data in data.items():
+          if 'outputs' in month_data:
+              for statement in month_data['outputs']:
+                  if 'rows' in statement:
+                      for row in statement['rows']:
+                          grand_total += row.get('total', 0)
+
+      # 1. Print to logs so you see it in the execution timeline
+      print(f"Aggregating counts... Final Grand Total: {grand_total}")
+
+      # 2. Export as a Kestra output variable named 'grand_total'
+      Kestra.outputs({'grand_total': grand_total})
+
+  - id: purge_files
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
