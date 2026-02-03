@@ -176,9 +176,24 @@ Created new flow - taxi_csv_inspect_multiple which does below steps -
 This flow is designed to inspect NYC Taxi CSV files (Yellow or Green) for a given year and multiple months without ingesting data into a database.
 Its purpose is to extract CSV files, count rows per file, aggregate totals, and clean up temporary files.
 
+Input Provided - 
+
+taxi type - yellow
+
+year - 2020 
+
+Months to process - [01,02,03,04,05,06,07,08,09,10,11,12]
+
+
 ```logs
 
+2026-02-02 19:47:14.349Raw Outputs: {"01":{"outputs":[{"rows":[{"total":6405008}],"size":1}],"outputFiles":{}},"02":{"outputs":[{"rows":[{"total":6299354}],"size":1}],"outputFiles":{}},"03":{"outputs":[{"rows":[{"total":3007292}],"size":1}],"outputFiles":{}},"04":{"outputs":[{"rows":[{"total":237993}],"size":1}],"outputFiles":{}},"05":{"outputs":[{"rows":[{"total":348371}],"size":1}],"outputFiles":{}},"06":{"outputs":[{"rows":[{"total":549760}],"size":1}],"outputFiles":{}},"07":{"outputs":[{"rows":[{"total":800412}],"size":1}],"outputFiles":{}},"08":{"outputs":[{"rows":[{"total":1007284}],"size":1}],"outputFiles":{}},"09":{"outputs":[{"rows":[{"total":1341012}],"size":1}],"outputFiles":{}},"10":{"outputs":[{"rows":[{"total":1681131}],"size":1}],"outputFiles":{}},"11":{"outputs":[{"rows":[{"total":1508985}],"size":1}],"outputFiles":{}},"12":{"outputs":[{"rows":[{"total":1461897}],"size":1}],"outputFiles":{}}}
+
+2026-02-02 19:47:15.805Aggregating counts... Final Grand Total: 24648499
+
 ```
+
+Answer - 24648499
 
 
 - Question 4. How many rows are there for the Green Taxi data for all CSV files in the year 2020? (1 point)
@@ -192,27 +207,28 @@ Its purpose is to extract CSV files, count rows per file, aggregate totals, and 
 
     - 1,342,034
 
-Steps followed - 
+Steps followed -
+Created new flow - taxi_csv_inspect_multiple which does below steps -
 
-Since we need all CSV files, I need to backfill all months of 2020
+This flow is designed to inspect NYC Taxi CSV files (Yellow or Green) for a given year and multiple months without ingesting data into a database.
+Its purpose is to extract CSV files, count rows per file, aggregate totals, and clean up temporary files.
 
-- **Start date**: `2019-12-31`  
-- **End date**: `2020-07-31`  
+Input Provided - 
 
-Get record counts - (row count of green_copy_in_to_staging_table)
+taxi type - green
 
-Jan 2020 - 6405008
-Feb 2020 - 
-March 2020 - 
-April 2020 - 
-May 2020 - 
-June 2020 - 
-July 2020 - 
-August 2020 - 
-September 2020 - 
-October 2020 - 
-November 2020 - 
-December 2020 - 
+year - 2020 
+
+Months to process - [01,02,03,04,05,06,07,08,09,10,11,12]
+
+```logs
+2026-02-02 19:50:51.092Raw Outputs: {"01":{"outputs":[{"rows":[{"total":447770}],"size":1}],"outputFiles":{}},"02":{"outputs":[{"rows":[{"total":398632}],"size":1}],"outputFiles":{}},"03":{"outputs":[{"rows":[{"total":223406}],"size":1}],"outputFiles":{}},"04":{"outputs":[{"rows":[{"total":35612}],"size":1}],"outputFiles":{}},"05":{"outputs":[{"rows":[{"total":57360}],"size":1}],"outputFiles":{}},"06":{"outputs":[{"rows":[{"total":63109}],"size":1}],"outputFiles":{}},"07":{"outputs":[{"rows":[{"total":72257}],"size":1}],"outputFiles":{}},"08":{"outputs":[{"rows":[{"total":81063}],"size":1}],"outputFiles":{}},"09":{"outputs":[{"rows":[{"total":87987}],"size":1}],"outputFiles":{}},"10":{"outputs":[{"rows":[{"total":95120}],"size":1}],"outputFiles":{}},"11":{"outputs":[{"rows":[{"total":88605}],"size":1}],"outputFiles":{}},"12":{"outputs":[{"rows":[{"total":83130}],"size":1}],"outputFiles":{}}}
+
+2026-02-02 19:50:51.330Aggregating counts... Final Grand Total: 1734051
+```
+
+Answer - 1734051
+
 
 Question 5. How many rows are there for the Yellow Taxi data for the March 2021 CSV file? (1 point)
 
@@ -244,3 +260,7 @@ Add a timezone property set to UTC-5 in the Schedule trigger configuration
 
 Add a location property set to New_York in the Schedule trigger configuration
 
+
+Answer - 
+To configure the timezone to New York in a Kestra Schedule trigger, you should:
+Add a timezone property set to America/New_York in the Schedule trigger configuration 
