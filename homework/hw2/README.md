@@ -36,7 +36,7 @@ To download all required files, swap:
 
 This covers **January through July 2021** for both taxi types.
 
-## Option 1 (Easiest): Kestra Backfill ✅
+## Option 1 Kestra Backfill ✅
 
 If your flow is **scheduled** and already **parameterized by date**, you can use Kestra’s built-in backfill feature.
 
@@ -125,7 +125,7 @@ wget -qO- https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow
 
 Output
 ```text
--rw-r--r--  1 niteshmishra  staff  134481400 Feb  2 14:50 yellow_tripdata_2020-12.csv
+-rw-r--r--  1 user  staff  134481400 Feb  2 14:50 yellow_tripdata_2020-12.csv
 ```
 
 The size column is 134481400 bytes.
