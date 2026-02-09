@@ -286,7 +286,7 @@ gsutil mb \
 gs://your-bucket-name/yellow_taxi_jan_2024.parquet
 ```
 
-## Steps to complete accisngment - 
+## Steps to complete assignment - 
 
 ### Step 1: Create External Table
 
