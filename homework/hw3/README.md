@@ -435,7 +435,7 @@ WHERE fare_amount = 0;
 
 Ans - 8333
 
-![Q4](../hw3/images/Q4_counting_zero_fare_trips.png)
+![Q4](../hw3/images/Q4_counting_zero_fare_trips_1.png)
 
 #### Q5: Partitioning & Clustering
 
