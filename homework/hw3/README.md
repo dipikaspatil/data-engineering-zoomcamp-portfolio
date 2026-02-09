@@ -523,7 +523,7 @@ Where is external table data stored?
 - Big Table
 
 
-Answer - GCS Bucket
+Answer - GCP Bucket
 
 #### Q8: Clustering Best Practices
 
