@@ -646,3 +646,126 @@ limit 10
 | Purpose        | Transform data for analytics   | Explore / ad-hoc queries |
 | DAG dependency | Part of dbt DAG                | Not part of DAG          |
 | Reusable       | Yes, can be referenced         | Usually one-off          |
+
+## DBT sources
+
+### What are dbt Sources?
+
+- dbt Sources represent raw data tables that already exist in your data warehouse.
+- They are not created by dbt — dbt only references them.
+- Sources are defined in YAML files, usually alongside your models.
+- They help with:
+    - Clear separation between raw data and transformed data
+    - Documentation
+    - Data freshness & testing
+
+## Why Use Sources?
+
+Without sources:
+```sql
+select * from raw.customers
+```
+
+With sources:
+```sql
+select * from {{ source('raw', 'customers') }}
+```
+
+### Benefits:
+
+- Lineage tracking (raw → staging → marts)
+- Built-in tests (freshness, not_null)
+- Safer refactoring (schema/table changes in one place)
+- Better docs
+
+## Defining a Source (YAML)
+```yaml
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: customers
+      - name: orders
+```
+
+### 📍 Usually placed in:
+```bash
+models/staging/schema.yml
+```
+
+### Using a Source in a Model
+```sql
+select
+    id,
+    first_name,
+    last_name,
+    created_at
+from {{ source('raw', 'customers') }}
+```
+- raw → source name
+- customers → table name
+
+### Adding Tests to Sources
+```yaml
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: customers
+        columns:
+          - name: id
+            tests:
+              - not_null
+              - unique
+```
+
+Run with:
+```bash
+dbt test
+```
+
+### Source Freshness (Very Important 🚨)
+
+Freshness checks ensure data is arriving on time.
+
+```yaml
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: orders
+        freshness:
+          warn_after:
+            count: 12
+            period: hour
+          error_after:
+            count: 24
+            period: hour
+        loaded_at_field: updated_at
+```
+
+Run freshness checks:
+```bash
+dbt source freshness
+```
+
+## Sources vs Models
+| Feature        | Source     | Model              |
+| -------------- | ---------- | ------------------ |
+| Created by dbt | ❌ No       | ✅ Yes              |
+| Defined in     | YAML       | SQL                |
+| Represents     | Raw tables | Transformed tables |
+| Can be tested  | ✅ Yes      | ✅ Yes              |
+| Used with      | `source()` | `ref()`            |
+
+
+## Best Practices
+
+- Always use sources for raw data
+- Never ref() raw tables
+- Add freshness checks for critical pipelines
+- Use sources → staging → marts pattern
