@@ -77,7 +77,8 @@ Output -
 min_year = 2019
 max_year = 2020
 ```
-Troublshoot errors - 
+
+#### Troublshoot errors - 
 
 1. Error while running - load_yellow_tripdata.py, `ModuleNotFoundError: No module named 'pandas'`
     - In Google Cloud Console, confirm python is avaialble, run - 
@@ -110,6 +111,14 @@ Troublshoot errors -
 - On Python 3.12 + recent BigQuery client versions, there is a metadata parsing bug that throws:
     - `TypeError: string indices must be integers, not 'str'`
 
+This happens even though gcloud auth login is fine, because the library is trying to read service account info from VM metadata and fails.
+
+- Use service account json
+    ```bash
+    export GOOGLE_APPLICATION_CREDENTIALS="/home/nipika73/your-service-account.json"
+    ```
+    Upload your-service-account.json from local to google cloud console.
+
 3. google.api_core.exceptions.Forbidden: 403 ... Caller does not have required permission to use project de-zoomcamp-2026-486900
 Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission
 
@@ -119,15 +128,178 @@ Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom r
         - BigQuery Job User
         - BigQuery User
 
+4. 403 ... Caller does not have required permission to use project de-zoomcamp-2026-486900
+Grant the caller the roles/serviceusage.serviceUsageConsumer role
 
-This happens even though gcloud auth login is fine, because the library is trying to read service account info from VM metadata and fails.
+    - Your Python script is trying to load data into BigQuery.
+    - The user credentials from gcloud auth login in Cloud Shell do not have enough permissions on the project.
+    - Specifically, the user cannot even “use” the project services, which is required before BigQuery operations.
 
-- Use service account json
-    ```bash
-    export GOOGLE_APPLICATION_CREDENTIALS="/home/nipika73/your-service-account.json"
-    ```
-    Upload your-service-account.json from local to google cloud console.
+- Assign permission `serviceusage.serviceUsageConsumer` to service account
 
+#### Script logs - 
+
+```logs
+ python load_green_tripdata.py 
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-01.csv.gz ...
+Downloaded ./tmp_green/2019-01.csv.gz
+Loaded 2019-01 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-02.csv.gz ...
+Downloaded ./tmp_green/2019-02.csv.gz
+Loaded 2019-02 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-03.csv.gz ...
+Downloaded ./tmp_green/2019-03.csv.gz
+Loaded 2019-03 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-04.csv.gz ...
+Downloaded ./tmp_green/2019-04.csv.gz
+Loaded 2019-04 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-05.csv.gz ...
+Downloaded ./tmp_green/2019-05.csv.gz
+Loaded 2019-05 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-06.csv.gz ...
+Downloaded ./tmp_green/2019-06.csv.gz
+Loaded 2019-06 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-07.csv.gz ...
+Downloaded ./tmp_green/2019-07.csv.gz
+Loaded 2019-07 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-08.csv.gz ...
+Downloaded ./tmp_green/2019-08.csv.gz
+Loaded 2019-08 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-09.csv.gz ...
+Downloaded ./tmp_green/2019-09.csv.gz
+Loaded 2019-09 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-10.csv.gz ...
+Downloaded ./tmp_green/2019-10.csv.gz
+Loaded 2019-10 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-11.csv.gz ...
+Downloaded ./tmp_green/2019-11.csv.gz
+Loaded 2019-11 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-12.csv.gz ...
+Downloaded ./tmp_green/2019-12.csv.gz
+Loaded 2019-12 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-01.csv.gz ...
+Downloaded ./tmp_green/2020-01.csv.gz
+Loaded 2020-01 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-02.csv.gz ...
+Downloaded ./tmp_green/2020-02.csv.gz
+Loaded 2020-02 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-03.csv.gz ...
+Downloaded ./tmp_green/2020-03.csv.gz
+Loaded 2020-03 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-04.csv.gz ...
+Downloaded ./tmp_green/2020-04.csv.gz
+Loaded 2020-04 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-05.csv.gz ...
+Downloaded ./tmp_green/2020-05.csv.gz
+Loaded 2020-05 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-06.csv.gz ...
+Downloaded ./tmp_green/2020-06.csv.gz
+Loaded 2020-06 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-07.csv.gz ...
+Downloaded ./tmp_green/2020-07.csv.gz
+Loaded 2020-07 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-08.csv.gz ...
+Downloaded ./tmp_green/2020-08.csv.gz
+Loaded 2020-08 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-09.csv.gz ...
+Downloaded ./tmp_green/2020-09.csv.gz
+Loaded 2020-09 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-10.csv.gz ...
+Downloaded ./tmp_green/2020-10.csv.gz
+Loaded 2020-10 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-11.csv.gz ...
+Downloaded ./tmp_green/2020-11.csv.gz
+Loaded 2020-11 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-12.csv.gz ...
+Downloaded ./tmp_green/2020-12.csv.gz
+Loaded 2020-12 into BigQuery
+✅ All green taxi CSV data loaded into BigQuery!
+```
+
+```logs
+python load_yellow_tripdata.py 
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-01.csv.gz ...
+Downloaded ./tmp_yellow/2019-01.csv.gz
+Loaded 2019-01 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-02.csv.gz ...
+Downloaded ./tmp_yellow/2019-02.csv.gz
+Loaded 2019-02 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-03.csv.gz ...
+Downloaded ./tmp_yellow/2019-03.csv.gz
+Loaded 2019-03 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-04.csv.gz ...
+Downloaded ./tmp_yellow/2019-04.csv.gz
+Loaded 2019-04 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-05.csv.gz ...
+Downloaded ./tmp_yellow/2019-05.csv.gz
+Loaded 2019-05 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-06.csv.gz ...
+Downloaded ./tmp_yellow/2019-06.csv.gz
+Loaded 2019-06 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-07.csv.gz ...
+Downloaded ./tmp_yellow/2019-07.csv.gz
+Loaded 2019-07 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-08.csv.gz ...
+Downloaded ./tmp_yellow/2019-08.csv.gz
+Loaded 2019-08 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-09.csv.gz ...
+Downloaded ./tmp_yellow/2019-09.csv.gz
+Loaded 2019-09 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-10.csv.gz ...
+Downloaded ./tmp_yellow/2019-10.csv.gz
+Loaded 2019-10 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-11.csv.gz ...
+Downloaded ./tmp_yellow/2019-11.csv.gz
+Loaded 2019-11 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2019-12.csv.gz ...
+Downloaded ./tmp_yellow/2019-12.csv.gz
+Loaded 2019-12 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-01.csv.gz ...
+Downloaded ./tmp_yellow/2020-01.csv.gz
+Loaded 2020-01 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-02.csv.gz ...
+Downloaded ./tmp_yellow/2020-02.csv.gz
+Loaded 2020-02 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-03.csv.gz ...
+Downloaded ./tmp_yellow/2020-03.csv.gz
+Loaded 2020-03 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-04.csv.gz ...
+Downloaded ./tmp_yellow/2020-04.csv.gz
+Loaded 2020-04 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-05.csv.gz ...
+Downloaded ./tmp_yellow/2020-05.csv.gz
+Loaded 2020-05 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-06.csv.gz ...
+Downloaded ./tmp_yellow/2020-06.csv.gz
+Loaded 2020-06 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-07.csv.gz ...
+Downloaded ./tmp_yellow/2020-07.csv.gz
+Loaded 2020-07 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-08.csv.gz ...
+Downloaded ./tmp_yellow/2020-08.csv.gz
+Loaded 2020-08 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-09.csv.gz ...
+Downloaded ./tmp_yellow/2020-09.csv.gz
+Loaded 2020-09 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-10.csv.gz ...
+Downloaded ./tmp_yellow/2020-10.csv.gz
+Loaded 2020-10 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-11.csv.gz ...
+Downloaded ./tmp_yellow/2020-11.csv.gz
+Loaded 2020-11 into BigQuery
+Downloading https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-12.csv.gz ...
+Downloaded ./tmp_yellow/2020-12.csv.gz
+Loaded 2020-12 into BigQuery
+✅ All yellow taxi CSV data loaded into BigQuery!
+
+```
+```sql
+select count(*) from 
+`de-zoomcamp-2026-486900.nytaxi.yellow_tripdata` --109047518
+
+select count(*) from 
+`de-zoomcamp-2026-486900.nytaxi.green_tripdata` --8409019
+```
 
 1.3 Check dataset location (IMPORTANT)
 
@@ -135,24 +307,14 @@ Click on the nytaxi dataset → Details panel.
 
 Look for:
 
-Data location: ?
+Data location: US
 
-
-Common values:
-
-US
-
-EU
-
-us-central1
-
-👉 Action:
-Tell me exactly what your dataset location is.
-```
 
 ### Step 2 — dbt Platform signup
 
 Free Developer plan is perfect — no upgrade needed.
+
+
 
 ### Step 3 — Create project
     Project name:
@@ -209,3 +371,5 @@ Once the IDE opens, you are officially ready for:
 - stg_yellow_tripdata
 - fact & dimension models
 - HW4 questions
+
+- test
