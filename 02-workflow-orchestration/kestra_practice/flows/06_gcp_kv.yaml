@@ -1,0 +1,27 @@
+id: 06_gcp_kv
+namespace: zoomcamp
+
+tasks:
+  - id: gcp_project_id
+    type: io.kestra.plugin.core.kv.Set # Setting GCP Project ID in Kestra Key-Value store
+    key: GCP_PROJECT_ID
+    kvType: STRING
+    value: project-42ad05c7-705a-4593-8f1
+
+  - id: gcp_location # (region)
+    type: io.kestra.plugin.core.kv.Set
+    key: GCP_LOCATION
+    kvType: STRING
+    value: us-west1
+
+  - id: gcp_bucket_name # GCS Bucket Name
+    type: io.kestra.plugin.core.kv.Set
+    key: GCP_BUCKET_NAME
+    kvType: STRING
+    value: zoomcamp-kestra-bucket-dipika
+
+  - id: gcp_dataset # BigQuery Dataset Name. Used later when creating/loading BigQuery tables.
+    type: io.kestra.plugin.core.kv.Set
+    key: GCP_DATASET
+    kvType: STRING
+    value: zoomcamp

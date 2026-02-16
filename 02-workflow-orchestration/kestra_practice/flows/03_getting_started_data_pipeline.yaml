@@ -1,0 +1,55 @@
+id: 03_getting_started_data_pipeline
+namespace: zoomcamp
+
+inputs: # Define input parameters for the flow
+  - id: columns_to_keep
+    type: ARRAY # Define the type of the input parameter
+    itemType: STRING # Define the type of items in the array
+    defaults:
+      - brand
+      - price
+
+tasks:
+  - id: extract # Downloads data from a URL and stores it in Kestra’s internal storage.
+    type: io.kestra.plugin.core.http.Download
+    uri: https://dummyjson.com/products # Output is something like: outputs.extract.uri
+
+  - id: transform
+    type: io.kestra.plugin.scripts.python.Script
+    containerImage: python:3.11-alpine # Runs Python inside a Docker container (python:3.11-alpine)
+    inputFiles:
+      data.json: "{{outputs.extract.uri}}" # Maps the downloaded file to data.json inside the container
+    outputFiles:
+      - "*.json" # Any .json file created by your script will be uploaded back to Kestra storage.
+    env:
+      COLUMNS_TO_KEEP: "{{inputs.columns_to_keep}}" # Kestra injects input values into environment variables.
+    script: |
+      import json
+      import os
+
+      columns_to_keep_str = os.getenv("COLUMNS_TO_KEEP") # Reads the environment variable set by Kestra
+      columns_to_keep = json.loads(columns_to_keep_str) # Parses the JSON string into a Python list
+
+      with open("data.json", "r") as file: # Opens the input file 
+          data = json.load(file) # Loads the JSON data
+
+      filtered_data = [
+          {column: product.get(column, "N/A") for column in columns_to_keep} # Filters each product to keep only the specified columns
+          for product in data["products"] # Iterates over each product in the data
+      ]
+
+      with open("products.json", "w") as file: # Writes the filtered data to products.json
+          json.dump(filtered_data, file, indent=4)
+
+  - id: query # Runs a SQL query on the transformed data using DuckDB
+    type: io.kestra.plugin.jdbc.duckdb.Queries
+    inputFiles:
+      products.json: "{{outputs.transform.outputFiles['products.json']}}" # Maps the transformed file to products.json inside the container
+    sql: |
+      INSTALL json; -- Install the JSON extension
+      LOAD json; -- Load the JSON extension
+      SELECT brand, round(avg(price), 2) as avg_price
+      FROM read_json_auto('{{workingDir}}/products.json') -- Reads the JSON file {{workingDir}} current temporary working directory for current task
+      GROUP BY brand
+      ORDER BY avg_price DESC;
+    fetchType: STORE # Store the query result in Kestra’s internal storage. Also accessible in later tasks via outputs.query.result
