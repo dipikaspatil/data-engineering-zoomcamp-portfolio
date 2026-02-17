@@ -27,4 +27,4 @@ renamed AS (
 )
 
 SELECT *
-FROM renamed;
+FROM renamed
