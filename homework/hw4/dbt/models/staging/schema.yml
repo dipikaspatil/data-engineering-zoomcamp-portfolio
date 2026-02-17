@@ -92,3 +92,25 @@ models:
         description: Total amount charged to passengers (does not include cash tips)
       - name: payment_type
         description: Payment method code (1=Credit card, 2=Cash, 3=No charge, 4=Dispute, 5=Unknown, 6=Voided)
+
+  - name: stg_fhv_tripdata
+    description: >
+      Staging model for For-Hire Vehicle (FHV) trip data.
+      Filters out invalid records and standardizes column names.
+    columns:
+      - name: dispatching_base_num
+        description: Dispatching base number
+        data_tests:
+          - not_null
+      - name: affiliated_base_number
+        description: Affiliated base number
+      - name: pickup_datetime
+        description: Trip pickup datetime
+      - name: dropoff_datetime
+        description: Trip dropoff datetime
+      - name: pickup_location_id
+        description: TLC Taxi Zone where pickup occurred
+      - name: dropoff_location_id
+        description: TLC Taxi Zone where dropoff occurred
+      - name: sr_flag
+        description: Shared ride flag
