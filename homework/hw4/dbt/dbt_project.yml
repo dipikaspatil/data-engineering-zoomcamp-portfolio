@@ -7,6 +7,5 @@ profile: hw4_dbt  # must match the profile name in profiles.yml
 # Optional: configure models
 models:
   hw4_dbt:
-    +schema: dbt_prod        # default schema for this project
     staging:
       +materialized: view
