@@ -1,4 +1,8 @@
+## Module 4 Homework: Analytics Engineering with dbt
+In this homework, we'll use the dbt project in 04-analytics-engineering/taxi_rides_ny/ to transform NYC taxi data and answer questions by querying the models.
+
 ## Cloud Setup Guide
+Set up your dbt project following the setup guide
 
 https://github.com/DataTalksClub/data-engineering-zoomcamp/blob/main/04-analytics-engineering/setup/cloud_setup.md
 
@@ -402,17 +406,6 @@ dbt build --target prod
 - All your HW4 queries (fct_trips, fct_monthly_zone_revenue, etc.) will now query the production tables
 
 ✅ Once this is done, your deployment environment is fully configured, and you can safely build and test your HW4 models.
-
-- In my case, I had to create jobs with target name - prod when I had to run command eg - dbt build --target prod
-
-
-### Step 4 - Setup project environment. 
-
-- Copy required files from Datatalks zoomcamp project to dbt cloud project, so that reuired modes are created. Then run job to
-build project `dbt build`
-
-
-
 
 ## Homework 4 Questions ans answers - 
 
