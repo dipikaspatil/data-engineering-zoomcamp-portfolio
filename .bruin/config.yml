@@ -1,0 +1,4 @@
+connections:
+  duckdb:
+    - name: duckdb-default
+      path: "/Users/niteshmishra/new/data-engineering-zoomcamp-portfolio/homework/hw5/duckdb.db"

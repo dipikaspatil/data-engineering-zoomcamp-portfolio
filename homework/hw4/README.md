@@ -403,6 +403,17 @@ dbt build --target prod
 
 ✅ Once this is done, your deployment environment is fully configured, and you can safely build and test your HW4 models.
 
+- In my case, I had to create jobs with target name - prod when I had to run command eg - dbt build --target prod
+
+
+### Step 4 - Setup project environment. 
+
+- Copy required files from Datatalks zoomcamp project to dbt cloud project, so that reuired modes are created. Then run job to
+build project `dbt build`
+
+
+
+
 ## Homework 4 Questions ans answers - 
 
 ### Question 1. Q1: dbt run --select int_trips_unioned builds which models? (1 point)
