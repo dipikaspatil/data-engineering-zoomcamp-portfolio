@@ -268,15 +268,6 @@ res3 = conn.execute("SELECT SUM(tip_amt) FROM taxi_data.taxi_rides").fetchone()
 print(f"Total Tips: ${res3[0]:,.2f}")
 ```
 
-Summary of Results (Expected)
-Based on the current 2026 cohort data, your output should look something like this:
-
-| Question | Expected Answer |
-|----------|----------------|
-| Q1: Start/End Dates | 2024-06-01 to 2024-07-01 |
-| Q2: Credit Card Proportion | 46.66% |
-| Q3: Total Tips | $6,063.41 |
-
 ## Troubleshoot errors
 
 1. Received below error while executing queries on table created in duckdb
@@ -299,11 +290,11 @@ LINE 1: ... min(trip_pickup_date_time), max(trip_pickup_date_time) FROM taxi_dat
                                                                         ^
 ```
 
-- This is classic "Where is my table?" mystery. This usually happens because dlt creates table names based on the resource name you defined in your code.
+- This is classic "Where is my table?" mystery. This usually happens because dlt creates table names based on the resource name defined in code.
 
 - But if if you don't use the @dlt.resource decorator, the library defaults to using the function name as the table name.
 
-- Since function was named taxi_rides, the table in DuckDB is likely named taxi_rides. However, when you ran the query, you were looking for rides.
+- Since function was named taxi_rides, the table in DuckDB is likely named taxi_rides. However, when we ran the query, we were looking for rides.
 
 ```python
 import duckdb
@@ -323,7 +314,7 @@ Index: []
 ### Why is the database empty?
 There are two likely culprits here:
 
-- The "Silent Yield" Issue: Because you removed the @dlt.resource decorator, dlt might not have recognized taxi_rides() as a valid data source when you passed it to pipeline.run(). It essentially ran an empty pipeline.
+- The "Silent Yield" Issue: Because we removed the @dlt.resource decorator, dlt might not have recognized taxi_rides() as a valid data source when we passed it to pipeline.run(). It essentially ran an empty pipeline.
 
 - File Path Confusion: In Google Colab, sometimes dlt creates the database in a hidden temporary folder if the path isn't explicitly clear, or it might have failed to commit the transaction because the generator (the loop) was interrupted by our "Loop Proved" break.
 
@@ -505,7 +496,7 @@ Check homework questions and answers -
 ```python
 import duckdb
 
-# Connect to the database created in your last run
+# Connect to the database created in last run
 conn = duckdb.connect("taxi_page_test.duckdb")
 
 # Execute the final calculation
@@ -546,7 +537,7 @@ Note - for first question, let's verify if there is any data beyond June, 2009
 ```python
 import duckdb
 
-# Connect to the database created in your last run
+# Connect to the database created in last run
 conn = duckdb.connect("taxi_page_test.duckdb")
 
 print(conn.execute("SELECT * FROM taxi_data.rides WHERE trip_pickup_date_time >= '2009-07-01'").fetchall())
@@ -557,3 +548,5 @@ Output - empty list. This confirms data is for June 2009
 ```
 []
 ```
+
+Note - final version of collab notebood is available in Git repo as dlt_taxi_pipeline.ipynb
