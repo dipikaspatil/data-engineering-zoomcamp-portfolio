@@ -1,5 +1,7 @@
 ## Homework: Build Your Own dlt Pipeline
 
+https://github.com/DataTalksClub/data-engineering-zoomcamp/blob/main/cohorts/2026/workshops/dlt/dlt_homework.md
+
 For this homework, build a dlt pipeline that loads NYC taxi trip data from a custom API into DuckDB and then answer some questions using the loaded data.
 
 Data Source
