@@ -552,3 +552,49 @@ Output - empty list. This confirms data is for June 2009
 ```
 
 Note - final version of collab notebood is available in Git repo as dlt_taxi_pipeline.ipynb
+
+## 🤖 How to "Add AI" to project:
+
+1. Use a "Zero-Shot" prompt for a Schema change:
+- Instead of manually writing a SQL cast, ask an AI (or use a tool like dlt's internal helpers) to generate a schema contract.
+
+- In the context of dlt, "Zero-Shot" prompting means giving an AI (like me or a LLM integrated via an MCP server) the raw data schema or a sample JSON and asking it to generate a dlt Schema Requirement without giving it any prior examples.
+
+- Since current pipeline had issues with rate_code and mta_tax being empty (and thus having no data type), we can use AI to "hard-code" those types via a Schema Contract.
+
+### 🤖 The Zero-Shot Prompt
+Copy this and paste it into an AI chat (Gemini in colab - cmd + ctrl + I)  to get the exact dlt configuration you need:
+
+```
+"I have a dlt resource named 'rides' loading into DuckDB.The source API currently sends rate_code and mta_tax as all NULL values, so dlt cannot infer the type. Based on NYC Taxi standards, these should be integers. Can you write the columns dictionary for a dlt resource that forces these to bigint and ensures tip_amt is a double?"
+```
+
+### 🛠️ The "AI-Generated" Result
+The AI would return something like this, which you can then plug into your resource:
+
+```python
+# Force types for empty columns using a Schema Contract
+@dlt.resource(
+    name="rides", 
+    write_disposition="replace",
+    columns={
+        "rate_code": {"data_type": "bigint", "nullable": True},
+        "mta_tax": {"data_type": "bigint", "nullable": True},
+        "tip_amt": {"data_type": "double", "nullable": True},
+    }
+)
+def taxi_rides():
+    # ... existing logic ...
+```
+
+
+
+2. The dlt MCP Server (The "Pro" way):
+- If running this locally (not in Colab), you would install the dlt-mcp-server. It lets an AI agent:
+
+- Inspect duckdb tables.
+
+- Suggest the best write_disposition (append vs. merge).
+
+- Fix the column types for those None values (like rate_code and mta_tax) automatically.
+
