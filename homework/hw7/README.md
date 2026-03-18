@@ -47,10 +47,6 @@ hw7/
 └── images                      # Screenshots
 ```
 
-## Kafka data streaming flowchart for taxi trips
-
-![Flowchart](../hw7/images/Kafka_data_streaming_flowchart_for_taxi_trips.png)
-
 ## Homework Questions
 
 https://github.com/DataTalksClub/data-engineering-zoomcamp/blob/main/cohorts/2026/07-streaming/homework.md#part-2-pyflink-questions-4-6
