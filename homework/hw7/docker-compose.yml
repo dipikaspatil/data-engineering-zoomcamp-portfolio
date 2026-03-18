@@ -1,0 +1,85 @@
+services:
+
+  # -----------------------------
+  # Redpanda Kafka Broker
+  # -----------------------------
+  redpanda:
+    image: redpandadata/redpanda:v25.3.9  # Match Zoomcamp workshop version
+    container_name: redpanda
+    command:
+      - redpanda start                   # Start Redpanda
+      - --overprovisioned                 # Dev-friendly flag for small machines
+      - --smp 1                           # Use 1 CPU core
+      - --memory 1G                       # Max memory
+      - --reserve-memory 0M               # No reserved memory
+      - --node-id 0                       # Node ID
+      - --check=false                     # Skip some system checks for dev
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092 # Listen on all interfaces for both internal and external communication. Internal for other containers like Flink to connect to redpanda:9092, external for host access like Python producer on your Mac to look for localhost:19092.
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092 # Advertise internal and external addresses. Internal for other containers, external for host access.
+    ports:
+      - "19092:19092"   # Map the external listener port to your Mac
+      - "9092:9092"   # Kafka port exposed to host
+      - "9644:9644"   # Redpanda admin port (optional)
+
+  # -----------------------------
+  # Kafka UI for Monitoring
+  # -----------------------------
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2  # Stable version for UI
+    ports:
+      - "8080:8080"                 # Access UI in browser via localhost:8080
+    environment:
+      KAFKA_CLUSTERS_0_NAME: redpanda
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: redpanda:9092
+
+  # ---------------------------------------------------------------------------
+  # 3. PostgreSQL (Data Warehouse Sink)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_DB: taxi_db        # Initial database created on startup
+      POSTGRES_USER: postgres     # Default administrative user
+      POSTGRES_PASSWORD: password # Password for authentication
+    ports:
+      - "5432:5432"               # Map host port 5432 to container port 5432
+
+  # ---------------------------------------------------------------------------
+  # 4. Flink Jobmanager (Orchestrator)
+  # ---------------------------------------------------------------------------
+  jobmanager:
+    build: . # Build from local Dockerfile in the current directory
+    container_name: workshop-jobmanager-1
+    hostname: jobmanager          # Fixed hostname so Taskmanager can find it
+    ports:
+      - "8081:8081"               # Flink Web Dashboard (check job status/logs)
+    command: jobmanager           # Entrypoint command to start as a master node
+    volumes:
+      # host_path:container_path -> Mounts your local code into the container.
+      # Changes to your .py files on your PC are instantly reflected in the container.
+      - ./job:/opt/src/job 
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+      - PYTHON_EXECUTABLE=python3 # Ensure Python 3 is used in the container
+      - PYFLINK_PYTHON=python3 # Set the environment variable for PyFlink to use Python 3
+
+  # ---------------------------------------------------------------------------
+  # 5. Flink Taskmanager (Worker)
+  # ---------------------------------------------------------------------------
+  taskmanager:
+    build: . # Build from the same local Dockerfile to ensure identical environment
+    container_name: workshop-taskmanager-1
+    hostname: taskmanager
+    command: taskmanager          # Entrypoint command to start as a worker node
+    volumes:
+      - ./job:/opt/src/job  # Mount the same code directory as the Jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 1
+      - PYTHON_EXECUTABLE=python3 # Ensure Python 3 is used in the container
+      - PYFLINK_PYTHON=python3 # Set the environment variable for PyFlink to use Python 3
