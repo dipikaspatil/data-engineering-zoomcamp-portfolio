@@ -97,7 +97,7 @@ from time import time
 
 t0 = time()
 
-# send all rows ...
+send all rows ...
 
 producer.flush()
 
