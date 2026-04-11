@@ -348,7 +348,7 @@ sources → staging → intermediate → marts
 
 ### Example Lineage
 
-![dbt Lineage](../08-capstone/images/dbt_lineage.png)
+![dbt Lineage](images/dbt_lineage.png)
 
 ### 🏬 BigQuery Optimization
 
@@ -490,12 +490,12 @@ Data is visualized using Looker Studio built on the gold layer.
 ### 🥧 Event Distribution by Source (Pie Chart)
 A pie chart shows the distribution of events across different data sources (aviation, finance, geo), highlighting the multi-source nature of the pipeline and relative contribution of each stream.
 
-![Event Distribution by Source](../08-capstone/images/Event_Distribution_by_Source_Dashboard_1.png)
+![Event Distribution by Source](images/Event_Distribution_by_Source_Dashboard_1.png)
 
 ### 📈 Streaming Behavior by Source (Time Series)
 A time series dashboard highlights how different data sources exhibit distinct streaming behaviors. Aviation data shows bursty, high-volume ingestion, finance reflects API-driven batch patterns, while geo data arrives gradually as a continuous stream. This demonstrates the platform’s ability to handle heterogeneous real-time data patterns within a unified pipeline.characteristics within a unified pipeline.
 
-![Streaming Pattern by Source](../08-capstone/images/Streaming_Pattern_by_Source_Dashboard_2.png)
+![Streaming Pattern by Source](images/Streaming_Pattern_by_Source_Dashboard_2.png)
 
 🔗 (Optional) Live Dashboard:
 https://lookerstudio.google.com/s/lAdyPoHoQf0
@@ -695,7 +695,7 @@ The pipeline consolidates streaming data from aviation, finance, and geo sources
 
 This model standardizes schema across domains and enables downstream analytics.
 
-![Unified Event Model](../08-capstone/images/int_events_unified_data.png)
+![Unified Event Model](images/int_events_unified_data.png)
 
 #### 📊 Aggregated Analytics Layer
 
@@ -703,13 +703,13 @@ Aggregated models built using dbt enable time-based analytics and power dashboar
 
 These models provide event volume insights across sources and time windows.
 
-![Aggregated Analytics Layer](../08-capstone/images/mart_event_volume_by_hour_data.png)
+![Aggregated Analytics Layer](images/mart_event_volume_by_hour_data.png)
 
 #### 🧱 Schema Design
 
 The unified schema is designed to handle multi-domain streaming data while maintaining consistency and extensibility.
 
-![Schema Design](../08-capstone/images/int_events_unified_schema.png)
+![Schema Design](images/int_events_unified_schema.png)
 
 ✔️ End-to-end pipeline verified: Streaming → Processing → Storage → Analytics → Visualization
 
