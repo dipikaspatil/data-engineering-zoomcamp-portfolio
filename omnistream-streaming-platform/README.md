@@ -6,11 +6,9 @@
 
 ⚡ Built as part of Data Engineering Zoomcamp — showcasing a production-grade streaming architecture with real-world design patterns.
 
-OmniStream is a production-grade, real-time data platform designed to act as a **data quality control plane** for streaming systems.
+OmniStream is a production-grade, real-time data platform designed as a **data quality control plane** for streaming systems.
 
-It ingests multi-source data, enforces validation and deduplication in real time, and ensures only high-quality, analytics-ready data reaches BigQuery.
-
-It acts as a real-time data gatekeeper, ensuring only high-quality data reaches systems like BigQuery while optimizing storage cost.
+It ingests multi-source data, enforces validation and deduplication in real time, and ensures only high-quality, analytics-ready data reaches BigQuery while optimizing storage cost.
 
 ## ❗ Problem
 
@@ -55,7 +53,7 @@ OmniStream introduces a streaming control layer built on Kafka + Flink:
     - Adding a new API typically requires minimal changes (new producer + topic)
     - Existing Flink job automatically processes new streams via multi-topic consumption
 
-👉 Enables rapid scaling across new domains without redesigning the pipeline
+👉 Enables rapid onboarding of new data sources without redesigning the pipeline
 
 ## 🧱 What It Does
 
@@ -493,7 +491,7 @@ A pie chart shows the distribution of events across different data sources (avia
 ![Event Distribution by Source](images/Event_Distribution_by_Source_Dashboard_1.png)
 
 ### 📈 Streaming Behavior by Source (Time Series)
-A time series dashboard highlights how different data sources exhibit distinct streaming behaviors. Aviation data shows bursty, high-volume ingestion, finance reflects API-driven batch patterns, while geo data arrives gradually as a continuous stream. This demonstrates the platform’s ability to handle heterogeneous real-time data patterns within a unified pipeline.characteristics within a unified pipeline.
+A time series dashboard highlights how different data sources exhibit distinct streaming behaviors. Aviation data shows bursty, high-volume ingestion, finance reflects API-driven batch patterns, while geo data arrives gradually as a continuous stream. This demonstrates the platform’s ability to handle heterogeneous real-time data patterns within a unified pipeline.
 
 ![Streaming Pattern by Source](images/Streaming_Pattern_by_Source_Dashboard_2.png)
 
@@ -600,8 +598,6 @@ OmniStream is not just a pipeline — it is a data quality gatekeeper.
 ## 🎉 Final Note
 
 OmniStream demonstrates a fully integrated, production-ready streaming data platform with strong guarantees around data quality, reliability, and scalability.
-
-It showcases how modern data engineering systems can combine streaming, storage, transformation, and orchestration into a cohesive and resilient architecture.
 
 It bridges the gap between raw ingestion and trusted analytics.
 
@@ -757,7 +753,7 @@ Sample code:
 
 👉 Enables scalable, reusable transformations with optimized query performance in BigQuery
 
-### ### 🧪 Data Quality Validation
+### 🧪 Data Quality Validation
 
 Deduplication correctness verified using:
 
