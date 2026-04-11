@@ -25,3 +25,17 @@
 **/.venv/
 **/__pycache__/
 **/*.pyc
+
+# build / generated
+target/
+**/target/
+logs/
+**/logs/
+
+# local dbt config
+profiles.yml
+**/profiles.yml
+
+# dbt generated packages
+dbt_internal_packages/
+**/dbt_internal_packages/
