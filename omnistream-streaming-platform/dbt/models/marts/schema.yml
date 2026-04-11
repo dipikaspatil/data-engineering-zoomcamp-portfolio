@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: mart_event_volume_by_minute
+    description: Minute-level event counts by source for dashboard time-series charts
+    columns:
+      - name: event_date
+        tests:
+          - not_null
+      - name: event_minute_ts
+        tests:
+          - not_null
+      - name: source_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['geo', 'aviation', 'finance']
+      - name: event_count
+        tests:
+          - not_null
+
+  - name: mart_event_volume_by_source
+    description: Total event counts by source for dashboard categorical charts
+    columns:
+      - name: source_type
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+                values: ['geo', 'aviation', 'finance']
+      - name: event_count
+        tests:
+          - not_null

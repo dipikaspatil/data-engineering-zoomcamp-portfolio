@@ -1,0 +1,35 @@
+
+Pipeline: nyc_taxi (.)
+  No issues found
+
+✓ Successfully validated 4 assets across 1 pipeline, all good.
+
+Interval: 2022-01-01T00:00:00Z - 2022-02-01T00:00:00Z
+
+Starting the pipeline execution...
+
+[22:53:23] Running:  ingestion.trips
+[22:53:23] Running:  ingestion.payment_lookup
+[22:53:23] Failed: ingestion.payment_lookup (0s)
+[22:53:23] Failed: ingestion.trips (0s)
+
+==================================================
+
+FAIL ingestion.payment_lookup UUU
+FAIL ingestion.trips 
+UPSTREAM FAILED reports.trips_report 
+UPSTREAM FAILED staging.trips 
+
+
+bruin run completed with failures in 1ms
+
+ ✗ Assets executed      2 failed / 2 skipped
+ ✗ Quality checks       3 skipped
+
+
+2 assets failed
+├── ingestion.trips
+│   └── there's no secret with the name 'duckdb-default'.
+└── ingestion.payment_lookup
+    └── destination connection duckdb-default not found
+

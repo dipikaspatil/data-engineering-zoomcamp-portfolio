@@ -1,0 +1,4 @@
+connections:
+  duckdb-default:
+    type: duckdb
+    path: nyc_taxi.duckdb

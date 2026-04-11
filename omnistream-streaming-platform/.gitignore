@@ -1,0 +1,27 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Maven / Java build
+target/
+*.jar
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+
+# Logs / OS / IDE
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Secrets
+*key*.json

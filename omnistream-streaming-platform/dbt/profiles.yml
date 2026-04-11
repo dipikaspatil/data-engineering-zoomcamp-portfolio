@@ -1,0 +1,14 @@
+dbt_omnistream:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: de-zoomcamp-2026-486900
+      dataset: omnistream_gold
+      threads: 4
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
+      location: us-central1
+      priority: interactive
+      job_execution_timeout_seconds: 300
+      job_retries: 1

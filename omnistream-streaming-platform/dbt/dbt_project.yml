@@ -1,0 +1,20 @@
+name: dbt_omnistream
+version: 1.0.0
+config-version: 2
+
+profile: dbt_omnistream
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+models:
+  dbt_omnistream:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    marts:
+      +materialized: table

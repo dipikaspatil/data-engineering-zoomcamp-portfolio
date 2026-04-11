@@ -1,0 +1,129 @@
+  # ==============================================================================
+  # OMNISTREAM INFRASTRUCTURE: Phase 1, Step 2
+  # This "Orchestra" connects local streaming (Redpanda) to cloud storage (GCP).
+  # ==============================================================================
+
+  services:
+
+    # 1. REDPANDA: The Kafka-compatible message broker (The "Stream")
+    redpanda:
+      image: redpandadata/redpanda:v25.3.9
+      container_name: redpanda
+      command:
+        - redpanda start
+        - --overprovisioned             # Optimizes for local dev/low resources
+        - --smp 1                        # Limits to 1 CPU core
+        - --memory 1G                    # Caps RAM at 1GB
+        - --reserve-memory 0M
+        - --node-id 0
+        - --check=false                  # Skips system checks for faster startup
+        - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+        - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      ports:
+        - "19092:19092"                 # Port for host access (Python Producer)
+        - "9092:9092"                   # Internal Kafka port
+        - "9644:9644"                   # Redpanda Admin port
+
+    # 2. REDPANDA CONSOLE: The UI for the Stream
+    redpanda-console:
+      image: docker.redpanda.com/redpandadata/console:v2.3.1
+      container_name: redpanda-console
+      depends_on:
+        - redpanda
+      ports:
+        - "8082:8080"                   # Host 8082 -> Container 8080 (Avoids Airflow conflict)
+      environment:
+        - KAFKA_BROKERS=redpanda:9092    # Points to the service name above
+
+    # 3. FLINK JOBMANAGER: The "Brain" of real-time processing
+    jobmanager:
+      build:
+        context: .
+        dockerfile: Dockerfile
+      container_name: omnistream-jobmanager
+      hostname: jobmanager
+      ports:
+        - "8081:8081"                   # Flink Web Dashboard
+      command: jobmanager
+      volumes:
+        - ../flink-processor:/opt/flink/project  # Maps Java project
+        - ../flink-processor/target:/opt/flink/usrlib
+        - ${GCP_KEY_PATH}:/etc/gcp/key.json:ro # Maps GCP Service Account Key
+      restart: always
+      env_file:
+        - .env  # Loads GCP_PROJECT_ID and other secrets from .env file
+      environment:
+        - |
+          FLINK_PROPERTIES=
+          jobmanager.rpc.address: jobmanager
+        - GOOGLE_APPLICATION_CREDENTIALS=/etc/gcp/key.json # Passport for GCP access
+        - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+        - PYTHON_EXECUTABLE=python3
+        - PYFLINK_PYTHON=python3
+        - GCS_COLD_ARCHIVE_BUCKET=${GCS_COLD_ARCHIVE_BUCKET}
+        - taskmanager.memory.jvm-metaspace.size=1024mb
+
+    # 4. FLINK TASKMANAGER: The "Muscle" that executes data transforms
+    taskmanager:
+      build:
+        context: .
+        dockerfile: Dockerfile
+      container_name: omnistream-taskmanager
+      hostname: taskmanager
+      depends_on:
+        - jobmanager
+      command: taskmanager
+      volumes:
+        - ../flink-processor:/opt/flink/project
+        - ../flink-processor/target:/opt/flink/usrlib
+        - ${GCP_KEY_PATH}:/etc/gcp/key.json:ro
+      restart: always
+      env_file:
+        - .env  # Loads GCP_PROJECT_ID and other secrets from .env file
+      environment:
+        - |
+          FLINK_PROPERTIES=
+          jobmanager.rpc.address: jobmanager
+          taskmanager.numberOfTaskSlots: 2
+        - GOOGLE_APPLICATION_CREDENTIALS=/etc/gcp/key.json
+        - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+        - PYTHON_EXECUTABLE=python3
+        - PYFLINK_PYTHON=python3
+        - GCS_COLD_ARCHIVE_BUCKET=${GCS_COLD_ARCHIVE_BUCKET}
+        - taskmanager.memory.jvm-metaspace.size=1024mb
+
+    # 5. POSTGRES: Metadata database for Airflow and local sinks
+    postgres:
+      image: postgres:16
+      container_name: postgres
+      environment:
+        - POSTGRES_DB=${POSTGRES_DB}
+        - POSTGRES_USER=${POSTGRES_USER}
+        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      ports:
+        - "5432:5432"
+
+    # 6. AIRFLOW: The Batch Scheduler (The "Conductor")
+    airflow:
+      build:
+        context: .
+        dockerfile: airflow.Dockerfile
+      container_name: omnistream-airflow
+      depends_on:
+        - postgres
+        - jobmanager # Ensure Flink is up before Airflow tries to talk to it
+      environment:
+        - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+        - AIRFLOW__CORE__LOAD_EXAMPLES=False
+        - AIRFLOW_VAR_GCP_PROJECT_ID=${GCP_PROJECT_ID}
+        - GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/config/omnistream-key.json
+      volumes:
+        - ../airflow/dags:/opt/airflow/dags
+        # Mount the dbt project so Airflow can run dbt commands in the DAGs
+        - ../dbt:/opt/airflow/dbt
+        - ${GCP_KEY_PATH}:/opt/airflow/config/omnistream-key.json:ro
+        # IMPORTANT: Mount the JAR folder so Airflow can see the Flink code
+        - ../flink-processor/target:/opt/airflow/plugins/flink_jars:ro
+      ports:
+        - "8080:8080"
+      command: standalone

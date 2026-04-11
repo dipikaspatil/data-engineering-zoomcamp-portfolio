@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: int_events_unified
+    description: Unified analytics model across geo, aviation, and finance streams
+    columns:
+      - name: event_id
+        tests:
+          - not_null
+
+      - name: event_timestamp
+        tests:
+          - not_null
+
+      - name: event_date
+        tests:
+          - not_null
+
+      - name: event_hour
+        tests:
+          - not_null
+
+      - name: source_type
+        tests:
+          - not_null
+          - accepted_values:
+                values: ['geo', 'aviation', 'finance']

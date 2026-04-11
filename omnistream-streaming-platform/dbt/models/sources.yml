@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: omnistream_staging
+    database: de-zoomcamp-2026-486900
+    schema: omnistream_staging
+    tables:
+      - name: raw_geo_data
+      - name: raw_aviation_data
+      - name: raw_finance_data

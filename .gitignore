@@ -1,9 +1,27 @@
-!.bruin.yml
-logs/runs
-logs/*.log
-__pycache__/
-*.py[cod]
+**/dbt/target/
+**/dbt/dbt_packages/
 
-!.bruin.yml
+.DS_Store
+.vscode/
+.idea/
 
-.bruin.yml
+
+# Secrets / credentials
+*key*.json
+**/key.json
+**/*key*.json
+
+# Terraform state
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfplan
+
+# Build artifacts
+**/target/
+**/*.jar
+
+# Python
+**/.venv/
+**/__pycache__/
+**/*.pyc
