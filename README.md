@@ -8,4 +8,4 @@ A production-grade, end-to-end streaming data platform built with Kafka, Flink, 
 ✔ Analytics-ready warehouse (BigQuery + dbt)  
 ✔ Dashboard (Looker Studio)
 
-👉 [View Full Project](./08-capstone/README.md)
+👉 [View Full Project](./omnistream-streaming-platform/README.md)
